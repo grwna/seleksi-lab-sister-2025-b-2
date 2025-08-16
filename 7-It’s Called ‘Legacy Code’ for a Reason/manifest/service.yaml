@@ -1,0 +1,13 @@
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cobol-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: cobol-app 
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
