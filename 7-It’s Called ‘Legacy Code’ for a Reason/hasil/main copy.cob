@@ -16,16 +16,17 @@
        FILE SECTION.
 
        FD IN-FILE.
-       01 IN-RECORD             PIC X(18).
+       01 IN-RECORD             PIC X(20).
 
        FD ACC-FILE.
-       01 ACC-RECORD-RAW        PIC X(18).
+       01 ACC-RECORD-RAW        PIC X(20).
 
        FD TMP-FILE.
-       01 TMP-RECORD            PIC X(18).
+       01 TMP-RECORD            PIC X(20).
 
        FD OUT-FILE.
        01 OUT-RECORD            PIC X(80).
+
 
        WORKING-STORAGE SECTION.
        77 IN-ACCOUNT            PIC 9(6).
@@ -41,9 +42,11 @@
        77 UPDATED               PIC X VALUE "N".
 
        77 FORMATTED-AMOUNT      PIC 9(6).99.
-       77 BALANCE-TEXT          PIC X(18).
+       77 BALANCE-TEXT          PIC X(20).
 
-       77 BALANCE-ALPHA         PIC X(18).
+       77 BALANCE-ALPHA         PIC X(15).
+       77 EOF-ACC-FILE          PIC X VALUE "N". *> flag baru menandakan EOF
+       77 TEMP          PIC X(9).
 
        PROCEDURE DIVISION.
 
@@ -76,20 +79,25 @@
        PROCESS-RECORDS.
            OPEN INPUT ACC-FILE
            OPEN OUTPUT TMP-FILE
-           PERFORM FOREVER
+           PERFORM UNTIL EOF-ACC-FILE = "Y"
                READ ACC-FILE
                    AT END
-                       EXIT PERFORM
+                       MOVE "Y" TO EOF-ACC-FILE
                    NOT AT END
-                       MOVE ACC-RECORD-RAW(1:6) TO ACC-ACCOUNT
-                       MOVE FUNCTION NUMVAL(ACC-RECORD-RAW(10:9))
-                           TO ACC-BALANCE
-                       IF ACC-ACCOUNT = IN-ACCOUNT
-                           MOVE "Y" TO MATCH-FOUND
-                           PERFORM APPLY-ACTION
-                       ELSE
+                       IF MATCH-FOUND = "Y"
                            WRITE TMP-RECORD FROM ACC-RECORD-RAW
+                       ELSE
+                           MOVE ACC-RECORD-RAW(1:6) TO ACC-ACCOUNT
+                           IF ACC-ACCOUNT = IN-ACCOUNT
+                               MOVE "Y" TO MATCH-FOUND
+                               MOVE ACC-RECORD-RAW(11:9) TO TEMP
+                               MOVE FUNCTION NUMVAL(TEMP) TO ACC-BALANCE
+                               PERFORM APPLY-ACTION
+                           ELSE
+                               WRITE TMP-RECORD FROM ACC-RECORD-RAW
+                           END-IF
                        END-IF
+               END-READ
            END-PERFORM
            CLOSE ACC-FILE
            CLOSE TMP-FILE.
@@ -139,6 +147,6 @@
                CALL "SYSTEM" USING "mv temp.txt accounts.txt"
            END-IF
            OPEN OUTPUT OUT-FILE
-           WRITE OUT-RECORD
+           WRITE OUT-RECORD  *> Tambah ini untuk menulis ke file output
            CLOSE OUT-FILE.
 
