@@ -1,7 +1,19 @@
 # It’s Called ‘Legacy Code’ for a Reason
 Cobol-cobolan
 
+## Daftar Isi
+- [Perbaikan](perbaikan)
+
 ## Tabel Spesifikasi
+| Spesifikasi          | Sifat | Status |
+| -------------------- | ----- | ------ |
+| Perbaikan Cobol      | Wajib | ✅ |
+| Konversi Rai -> IDR  | Wajib | ❌ |
+| Kubernetes       | Bonus | ✅ |
+| Automatic Interest        | Bonus | ✅ |
+| Reverse Proxy       | Bonus | ❌ |
+| Domain     | Bonus | ❌ |
+
 
 ## Perbaikan
 ### Dockerfile
@@ -17,6 +29,10 @@ Cobol-cobolan
     RUN cobc -x -o main main.cob
 ```
 
+>[!note]
+> Jalankan Docker dengan
+>docker build -t cobol-app ./hasil <br>
+>docker run --rm -p 8000:8000 cobol-app <br>
 
 ### main.cob
 - Pada paragraf `APPLY-ACTION` logika withdrawal dan deposit terbalik.
@@ -33,3 +49,30 @@ NEW - membuat akun baru
 DEP - deposit (mengurangi balance)
 WDR - withdrawal (menambah balance)
 BAL - balance inquiry (melihat balance)
+
+
+## Bonus
+### Kubernetes
+- Menggunakan Minikube 
+
+Dari dalam direktori root repo ini
+`minikube start`
+`docker build -t cobol-app ./hasil`
+`eval $(minikube -p minikube docker-env)`
+`kubectl apply -f manifest/deployment.yaml -f manifest/service.yaml -f manifest/pvc.yaml`
+`kubectl port-forward service/cobol-service 8000:80` pada terminal berbeda
+`minikube service cobol-service` pada terminal berbeda
+
+### Interest Rate
+Dibuat dalam bentuk infinite loop yang memanggil sleep(23) sebelum memproses ulang perhitungan bunga. <br>
+Hanya bisa dijalankan bersama dengan aplikasi biasa menggunakan kubernetes sebagai dua *container* dalam satu pod. <br>
+Untuk mengeceknya, pertama jalankan `kubectl get pods` untuk mendapatkan nama pod, kemudian jalankan
+```
+    kubectl exec <POD_NAME> -c webapp -- cat accounts.txt
+    kubectl exec <POD_NAME> -c interest -- cat accounts.txt
+```
+Untuk membandingkan file pada kedua *container*, serta
+```
+    kubectl logs <POD_NAME> -c interest
+```
+Untuk memonitor keberjalanannya perhitungan *interest*.
