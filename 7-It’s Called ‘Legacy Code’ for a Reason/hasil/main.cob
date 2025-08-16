@@ -16,13 +16,13 @@
        FILE SECTION.
 
        FD IN-FILE.
-       01 IN-RECORD             PIC X(18).
+       01 IN-RECORD             PIC X(23).
 
        FD ACC-FILE.
-       01 ACC-RECORD-RAW        PIC X(18).
+       01 ACC-RECORD-RAW        PIC X(23).
 
        FD TMP-FILE.
-       01 TMP-RECORD            PIC X(18).
+       01 TMP-RECORD            PIC X(23).
 
        FD OUT-FILE.
        01 OUT-RECORD            PIC X(80).
@@ -30,20 +30,20 @@
        WORKING-STORAGE SECTION.
        77 IN-ACCOUNT            PIC 9(6).
        77 IN-ACTION             PIC X(3).
-       77 IN-AMOUNT             PIC 9(6)V99.
+       77 IN-AMOUNT             PIC 9(12)V99.
 
        77 ACC-ACCOUNT           PIC 9(6).
        77 ACC-ACTION            PIC X(3).
-       77 ACC-BALANCE           PIC 9(6)V99.
+       77 ACC-BALANCE           PIC 9(12)V99.
 
-       77 TMP-BALANCE           PIC 9(6)V99.
+       77 TMP-BALANCE           PIC 9(12)V99.
        77 MATCH-FOUND           PIC X VALUE "N".
        77 UPDATED               PIC X VALUE "N".
 
-       77 FORMATTED-AMOUNT      PIC 9(6).99.
-       77 BALANCE-TEXT          PIC X(18).
+       77 FORMATTED-AMOUNT      PIC 9(12).99.
+       77 BALANCE-TEXT          PIC X(23).
 
-       77 BALANCE-ALPHA         PIC X(18).
+       77 BALANCE-ALPHA         PIC X(23).
 
        PROCEDURE DIVISION.
 
@@ -82,7 +82,7 @@
                        EXIT PERFORM
                    NOT AT END
                        MOVE ACC-RECORD-RAW(1:6) TO ACC-ACCOUNT
-                       MOVE FUNCTION NUMVAL(ACC-RECORD-RAW(10:9))
+                       MOVE FUNCTION NUMVAL(ACC-RECORD-RAW(10:14))
                            TO ACC-BALANCE
                        IF ACC-ACCOUNT = IN-ACCOUNT
                            MOVE "Y" TO MATCH-FOUND
@@ -119,7 +119,7 @@
            MOVE IN-ACCOUNT TO TMP-RECORD(1:6)
            MOVE IN-ACTION  TO TMP-RECORD(7:3)
            MOVE TMP-BALANCE TO FORMATTED-AMOUNT
-           MOVE FORMATTED-AMOUNT TO TMP-RECORD(10:9)
+           MOVE FORMATTED-AMOUNT TO TMP-RECORD(10:14)
 
            WRITE TMP-RECORD
            MOVE "Y" TO UPDATED.
@@ -129,7 +129,7 @@
            MOVE IN-ACCOUNT TO ACC-RECORD-RAW(1:6)
            MOVE IN-ACTION  TO ACC-RECORD-RAW(7:3)
            MOVE IN-AMOUNT TO FORMATTED-AMOUNT
-           MOVE FORMATTED-AMOUNT TO ACC-RECORD-RAW(10:9)
+           MOVE FORMATTED-AMOUNT TO ACC-RECORD-RAW(10:14)
 
            WRITE ACC-RECORD-RAW
            CLOSE ACC-FILE.
@@ -141,4 +141,6 @@
            OPEN OUTPUT OUT-FILE
            WRITE OUT-RECORD
            CLOSE OUT-FILE.
+
+      * INTEREST IMPLEMENTATION
 
