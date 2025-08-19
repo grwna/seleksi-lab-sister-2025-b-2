@@ -28,13 +28,9 @@ spec:
           mountPath: /data
 
       containers:
-      # --- Container 1: The Python Web App (with the fix) ---
       - name: webapp
         image: cobol-app:latest
         imagePullPolicy: Never
-        # This command runs before the web server starts.
-        # It creates a link from the local path to the shared volume's path,
-        # then starts the uvicorn server as normal.
         command: ["/bin/sh", "-c"]
         args:
           - ln -sf /data/accounts.txt /workspace/accounts.txt && uvicorn app:app --host 0.0.0.0 --port 8000
@@ -44,7 +40,6 @@ spec:
         - name: cobol-data
           mountPath: /data
 
-      # --- Container 2: The COBOL Interest Calculator (working correctly) ---
       - name: interest
         image: cobol-app:latest
         imagePullPolicy: Never
