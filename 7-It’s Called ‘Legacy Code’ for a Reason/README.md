@@ -8,12 +8,19 @@ Cobol-cobolan
 | Spesifikasi          | Sifat | Status |
 | -------------------- | ----- | ------ |
 | Perbaikan Cobol      | Wajib | ✅ |
-| Konversi Rai -> IDR  | Wajib | ❌ |
-| Kubernetes       | Bonus | ✅ |
+| Konversi Rai -> IDR  | Bonus | ✅ |
+| Deploy Kubernetes       | Bonus | ✅/❌ |
 | Automatic Interest        | Bonus | ✅ |
-| Reverse Proxy       | Bonus | ❌ |
+| Reverse Proxy       | Bonus | ✅/❌ |
 | Domain     | Bonus | ❌ |
 
+
+## Direktori
+- `hasil` - menyimpan hasil pekerjaan (perbaikan kode)
+- `sumber` - menyimpan sumber kode soal original (sebelum perbaikan)
+- `manifest` - menyimpan file manifest untuk deployment kubernetes
+
+<br>
 
 ## Perbaikan
 ### Dockerfile
@@ -23,7 +30,7 @@ Cobol-cobolan
     RUN pip install --no-cache-dir -r requirements.txt
 ```
 -  Tambah `gnucobol4` ke `apt-get-install` sebagai compiler Cobol.
-- Ubah `EXPOSE` dari 5000 menjadi 8000
+- Ubah `EXPOSE` dari 5000 menjadi 8000 (karena `.html` menggunakan 8000)
 - Kompilasi `main.cob`, dengan command
 ```
     RUN cobc -x -o main main.cob
@@ -38,41 +45,78 @@ Cobol-cobolan
 - Pada paragraf `APPLY-ACTION` logika withdrawal dan deposit terbalik.
 - Pada paragraf `FINALIZE`, file output hanya dibuka lalu ditutup, tidak dituliskan. Tambah `WRITE OUT-RECORD` di antara line membuka dan line menutup
 - Pada beberapa titik, ada kesalahan text slicing (ie. 1:5, 6:3), sesuaikan dengan panjang sebenarnya.
-- Ukuran buffer file diubah 15 -> 18 (harus persis 18 karena data input panjangnya 18).
+- Ukuran buffer file diubah sesuai panjang format yang diinginkan (misal: 15 -> 18).
 - Logika `PROCESS-RECORDS` berhenti ketika ada *match found*, ganti `PERFORM UNTIL MATCH-FOUND = "Y"`menjadi `PERFORM FOREVER`
+Semua langkah diatas disertakan dengan pembuatan variabel baru jika dibutuhkan.
 
+>[!note]
+> Request yang dapat dilakaukan pada *banking app* sebagai berikut:
+>NEW - membuat akun baru
+>DEP - deposit (mengurangi balance)
+>WDR - withdrawal (menambah balance)
+>BAL - balance inquiry (melihat balance)
 
-BARU
-- ganti . ke v di beberapa
-
-NEW - membuat akun baru
-DEP - deposit (mengurangi balance)
-WDR - withdrawal (menambah balance)
-BAL - balance inquiry (melihat balance)
-
+<br>
 
 ## Bonus
-### Kubernetes
-- Menggunakan Minikube 
+### Konversi Rai ke IDR
+Data yang disimpan pada `input.txt` dan `accounts.txt` menggunakan mata uang Rai Stones, sedangkan yang disimpan pada `output.txt` telah dikonversi menjadi Rupiah. Karena hanya request BAL yang menghasilkan output nominal, maka saya hanya merubah kode bagian itu. Update ukuran variabel sehingga cukup untuk menyimpan angka maksimum Rai Stone (999,999.99 * 120,000,000.00 = 119,999,998,800,000, 15 digit),  lalu sebelum menyimpan ke `OUT-RECORD`, nominal dikalikan dengan *conversion rate*.
 
-Dari dalam direktori root repo ini
-`minikube start`
-`docker build -t cobol-app ./hasil`
-`eval $(minikube -p minikube docker-env)`
-`kubectl apply -f manifest/deployment.yaml -f manifest/service.yaml -f manifest/pvc.yaml`
-`kubectl port-forward service/cobol-service 8000:80` pada terminal berbeda
-`minikube service cobol-service` pada terminal berbeda
+### Kubernetes
+- Menggunakan Minikube
+
+
+Untuk menjalankan secara lokal, dari dalam direktori root repo ini, jalankan perintah-perintah berikut sesuai urutan
+```
+    minikube start
+    eval $(minikube -p minikube docker-env)
+    docker build -t cobol-app ./hasil
+    kubectl apply -f manifest/deployment.yaml -f manifest/service.yaml -f manifest/pvc.yaml
+```
+Kemudian masing-masing pada terminal berbeda
+```
+    minikube service cobol-service -> mengekspos service agar bisa dibuka
+    kubectl port-forward service/cobol-service 8000:80 -> agar frontend bisa interaksi degnan backend (python)
+```
+
+**NOTE**:Untuk saat ini, deployment masih untuk lokal saja.
 
 ### Interest Rate
 Dibuat dalam bentuk infinite loop yang memanggil sleep(23) sebelum memproses ulang perhitungan bunga. <br>
-Hanya bisa dijalankan bersama dengan aplikasi biasa menggunakan kubernetes sebagai dua *container* dalam satu pod. <br>
-Untuk mengeceknya, pertama jalankan `kubectl get pods` untuk mendapatkan nama pod, kemudian jalankan
+
+#### Docker
+Jalankan seperti biasa, program menghitung bunga akan berjalan sebagai *background task*. Pada Dockerfile dijalankan dengan perintah berikut:
+`CMD  ./main --apply-interest & exec uvicorn app:app --host 0.0.0.0 --port 8000` 
+
+#### Kubernetes
+Jalankan kubernetes sesuai instruksi pada [Kubernetes](./README.md#L59) <br>
+
+Untuk membandingkan file pada kedua *container*, gunakan *command* berikut
 ```
     kubectl exec <POD_NAME> -c webapp -- cat accounts.txt
     kubectl exec <POD_NAME> -c interest -- cat accounts.txt
 ```
-Untuk membandingkan file pada kedua *container*, serta
+Untuk memonitor keberjalanannya perhitungan *interest*, gunakan *command* berikut
 ```
     kubectl logs <POD_NAME> -c interest
 ```
-Untuk memonitor keberjalanannya perhitungan *interest*.
+
+Atau bisa menggunakan web app dengan meng-*query* BAL berkali-kali dan melihat perubahannya.
+
+Cara saya mengerjakan untuk Kubernetes adalah dengan membuat dua *container* pada satu pod, yang masing-masing menjalankan webapp dan perhitungan bunga secara terpisah. Lalu kedua *container* ini akan mengakses satu file yang sama yang terhubung melalui *symbolic link*. Detailnya bisa dilihat pada `manifest/deployment.yaml` dan `manifest/pvc.yaml`
+
+### Reverse Proxy 
+Implementasinya pada Kubernetes adalah dengan membuat pod baru sebagai *proxy* server, yang akan meneruskan *traffic* eksternal ke *port* 8000 pada address webapp.
+
+Deploy pod menggunakan
+```
+    kubectl apply -f manifest/nginx-deployment.yaml -f manifest/nginx-service.yaml -f manifest/nginx-config.yaml
+```
+Matikan *port forwarding* sebelumnya dan gunakan perintah berikut untuk menjalankan *port forwarding* IP *proxy* server.
+```
+    kubectl port-forward service/nginx-service 8000:80
+```
+
+Dan jalankan `kubectl get pods -o wide` untuk melihat IP address dari webapp dan proxy server.
+
+**NOTE**:Sama seperti *deployment* Kubernetes, *reverse proxy* ini hanya untuk lokal.
