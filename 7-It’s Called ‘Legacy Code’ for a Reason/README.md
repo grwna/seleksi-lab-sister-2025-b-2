@@ -2,16 +2,17 @@
 Cobol-cobolan
 
 ## Daftar Isi
-- [Perbaikan](perbaikan)
+- [Perbaikan](#perbaikan)
+- [Bonus](#bonus)
 
 ## Tabel Spesifikasi
 | Spesifikasi          | Sifat | Status |
 | -------------------- | ----- | ------ |
 | Perbaikan Cobol      | Wajib | ✅ |
-| Konversi Rai -> IDR  | Bonus | ✅ |
-| Deploy Kubernetes       | Bonus | ✅/❌ |
-| Automatic Interest        | Bonus | ✅ |
-| Reverse Proxy       | Bonus | ✅/❌ |
+| Konversi Rai -> IDR  | Bonus | [Konversi](#konversi-rai-ke-idr) |
+| Deploy Kubernetes       | Bonus | [Deploy](#kubernetes) |
+| Bunga Otomatis        | Bonus | [Bunga](#perhitungan-bunga-otomatis) |
+| Reverse Proxy       | Bonus | [Reverse Proxy](#reverse-proxy) |
 | Domain     | Bonus | ❌ |
 
 
@@ -57,10 +58,13 @@ Semua langkah diatas disertakan dengan pembuatan variabel baru jika dibutuhkan.
 >BAL - balance inquiry (melihat balance)
 
 <br>
+<br>
 
 ## Bonus
 ### Konversi Rai ke IDR
 Data yang disimpan pada `input.txt` dan `accounts.txt` menggunakan mata uang Rai Stones, sedangkan yang disimpan pada `output.txt` telah dikonversi menjadi Rupiah. Karena hanya request BAL yang menghasilkan output nominal, maka saya hanya merubah kode bagian itu. Update ukuran variabel sehingga cukup untuk menyimpan angka maksimum Rai Stone (999,999.99 * 120,000,000.00 = 119,999,998,800,000, 15 digit),  lalu sebelum menyimpan ke `OUT-RECORD`, nominal dikalikan dengan *conversion rate*.
+
+<br>
 
 ### Kubernetes
 - Menggunakan Minikube
@@ -79,9 +83,11 @@ Kemudian masing-masing pada terminal berbeda
     kubectl port-forward service/cobol-service 8000:80 -> agar frontend bisa interaksi degnan backend (python)
 ```
 
-**NOTE**:Untuk saat ini, deployment masih untuk lokal saja.
+**NOTE**: Untuk saat ini, deployment masih untuk lokal saja.
 
-### Interest Rate
+<br>
+
+### Perhitungan Bunga Otomatis
 Dibuat dalam bentuk infinite loop yang memanggil sleep(23) sebelum memproses ulang perhitungan bunga. <br>
 
 #### Docker
@@ -105,6 +111,8 @@ Atau bisa menggunakan web app dengan meng-*query* BAL berkali-kali dan melihat p
 
 Cara saya mengerjakan untuk Kubernetes adalah dengan membuat dua *container* pada satu pod, yang masing-masing menjalankan webapp dan perhitungan bunga secara terpisah. Lalu kedua *container* ini akan mengakses satu file yang sama yang terhubung melalui *symbolic link*. Detailnya bisa dilihat pada `manifest/deployment.yaml` dan `manifest/pvc.yaml`
 
+<br>
+
 ### Reverse Proxy 
 Implementasinya pada Kubernetes adalah dengan membuat pod baru sebagai *proxy* server, yang akan meneruskan *traffic* eksternal ke *port* 8000 pada address webapp.
 
@@ -119,4 +127,4 @@ Matikan *port forwarding* sebelumnya dan gunakan perintah berikut untuk menjalan
 
 Dan jalankan `kubectl get pods -o wide` untuk melihat IP address dari webapp dan proxy server.
 
-**NOTE**:Sama seperti *deployment* Kubernetes, *reverse proxy* ini hanya untuk lokal.
+**NOTE**: Sama seperti *deployment* Kubernetes, *reverse proxy* ini hanya bisa lokal.
