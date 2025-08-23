@@ -1,0 +1,19 @@
+{
+  "product": {
+    "id": 101,
+    "name": "Wireless Mouse",
+    "price": 25.99,
+    "inStock": true,
+    "details": {
+      "color": "Black",
+      "connectivity": "2.4 GHz",
+      "batteryLife": "6 months"
+    },
+    "tags": ["ergonomic", "computer", "peripheral"]
+  },
+  "customer": {
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "isVip": false
+  }
+}
