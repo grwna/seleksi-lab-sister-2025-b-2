@@ -39,6 +39,23 @@ section .data
     len_prefix          equ $ - path_prefix
 
 
+    ; =================== METHODS ============================
+    http_201_created    db 'HTTP/1.1 201 Created', 13, 10
+    len_201_created     equ $ - http_201_created
+    http_405_not_allowed db 'HTTP/1.1 405 Method Not Allowed', 13, 10
+    len_405_not_allowed  equ $ - http_405_not_allowed
+    http_409_conflict   db 'HTTP/1.1 409 Conflict', 13, 10
+    len_409_conflict    equ $ - http_409_conflict
+    http_500_error      db 'HTTP/1.1 500 Internal Server Error', 13, 10
+    len_500_error       equ $ - http_500_error
+
+    ; Method strings for comparison
+    method_get_str      db 'GET', 0
+    method_post_str     db 'POST', 0
+    method_put_str      db 'PUT', 0
+    method_delete_str   db 'DELETE', 0
+
+
 section .bss
     server_fd resq 1
     client_fd resq 1
@@ -56,7 +73,10 @@ section .text
     global _start
     global serve_static_file
     extern itoa
+    extern atoi
+    extern strcmp
     extern get_mime_type
+    extern find_body
 
 
 _start:
@@ -128,6 +148,8 @@ child_process:
     mov rdx, REQUEST_BUFFER_SIZE
     syscall
 
+    mov r15, rax                       ; read data
+
     ; --- Parse Method ---
     lea rsi, [client_buffer]
     mov [method_], rsi
@@ -196,6 +218,55 @@ print_parsing:
 
 
 handle_route:
+    mov rdi, [method_]
+
+    ; GET
+    lea rsi, [method_get_str]
+    call strcmp
+    cmp rax, 0
+    je handle_get
+
+    ; POST
+    lea rsi, [method_post_str]
+    mov rdi, [method_]
+    call strcmp
+    cmp rax, 0
+    je handle_post
+
+    ; PUT
+    lea rsi, [method_put_str]
+    mov rdi, [method_]
+    call strcmp
+    cmp rax, 0
+    je handle_put
+
+    ; DELETE
+    lea rsi, [method_delete_str]
+    mov rdi, [method_]
+    call strcmp
+    cmp rax, 0
+    je handle_delete
+
+    jmp handle_method_not_allowed
+
+    
+build_path:
+    push rcx
+    push rsi
+
+    lea rsi, [path_prefix]
+    mov rcx, len_prefix
+    rep movsb
+
+    mov rsi, [path_]
+    mov rcx, [path_len]
+    rep movsb
+
+    pop rsi
+    pop rcx
+    ret
+
+handle_get:
     mov rsi, [path_]
     cmp byte [rsi], '/'
     jne .serve_file
@@ -207,22 +278,21 @@ handle_route:
     jmp .serve_file
 
     .serve_index:
-        lea rdi, [path_index]
+        lea rdi, [path_buffer]
+        lea rsi, [path_index]
+        mov rcx, 21                    ; Hardcoded length of index path cos im too lazy
+        rep movsb                      ; copy string
+
+        lea rdi, [path_buffer]
         call serve_static_file
         jmp client_disconnected
 
     .serve_file:
     ; appends ./public prefix then call to serve file
         lea rdi, [path_buffer]
-        lea rsi, [path_prefix]
-        mov rcx, len_prefix
-        rep movsb
-
-        mov rsi, [path_]
-        mov rcx, [path_len]
-        rep movsb
-
+        call build_path
         mov byte [rdi], 0
+
         lea rdi, [path_buffer]
         call serve_static_file
         jmp client_disconnected
@@ -234,24 +304,131 @@ handle_route:
     ret
 
 
-; handle_client_loop:
-;     mov rax, SYS_READ
-;     mov rdi, [client_fd]
-;     lea rsi, [client_buffer]
-;     mov rdx, REQUEST_BUFFER_SIZE
-;     syscall
+handle_put:
+    lea rdi,  [path_buffer]
+    call build_path
+    mov byte [rdi], 0
 
-;     cmp rax, 0
-;     jle client_disconnected
+    mov rax, SYS_OPEN
+    lea rdi, [path_buffer]
+    mov rsi, O_WRONLY | O_CREAT | O_TRUNC
+    mov rdx, 0644o                     ; permission
+    syscall
 
-;     mov rdx, rax
+    cmp rax, 0
+    jl .put_failed  
 
-;     mov rax, SYS_WRITE
-;     mov rdi, [client_fd]
-;     lea rsi, [client_buffer]
-;     syscall
+    mov r12, rax
 
-;     jmp handle_client_loop
+    call find_and_calc_body
+    jc .put_failed
+
+
+    ; Write body to file
+    mov rax, SYS_WRITE
+    mov rdi, r12 ; file fd
+    syscall
+
+    mov rax, SYS_CLOSE
+    mov rdi, r12
+    syscall
+
+    mov rax, SYS_WRITE
+    mov rdi, [client_fd]
+    lea rsi, [http_200_ok]
+    mov rdx, len_200_ok
+    syscall
+    jmp client_disconnected
+
+    .put_failed:
+        mov rax, SYS_WRITE
+        mov rdi, [client_fd]
+        lea rsi, [http_500_error]
+        mov rdx, len_500_error
+        syscall
+        jmp client_disconnected
+
+handle_post:
+    lea rdi,  [path_buffer]
+    call build_path
+    mov byte [rdi], 0
+
+    mov rax, SYS_OPEN
+    lea rdi, [path_buffer]
+    mov rsi, O_WRONLY | O_CREAT | O_EXCL
+    mov rdx, 0644o                     ; permission
+    syscall
+
+    cmp rax, 0
+    jl .post_failed
+
+    mov r12, rax
+
+    call find_and_calc_body
+    jc .post_failed
+
+    ; Write body to file
+    mov rax, SYS_WRITE
+    mov rdi, r12 ; file fd
+    syscall
+
+    mov rax, SYS_CLOSE
+    mov rdi, r12
+    syscall
+
+    mov rax, SYS_WRITE
+    mov rdi, [client_fd]
+    lea rsi, [http_201_created]
+    mov rdx, len_201_created
+    syscall
+    jmp client_disconnected
+
+    .post_failed:
+        mov rax, SYS_WRITE
+        mov rdi, [client_fd]
+        lea rsi, [http_409_conflict]
+        mov rdx, len_409_conflict
+        syscall
+        jmp client_disconnected
+
+handle_delete:
+    lea rdi, [path_buffer]
+    call build_path
+    mov byte [rdi], 0
+
+    mov rax, SYS_UNLINK
+    lea rdi, [path_buffer]
+    syscall
+
+    cmp rax, 0
+    jl .delete_failed
+
+    ; SUCCESS 200
+    mov rax, SYS_WRITE
+    mov rdi, [client_fd]
+    lea rsi, [http_200_ok]
+    mov rdx, len_200_ok
+    syscall
+    jmp client_disconnected
+
+    .delete_failed:
+        ; Could be 404 Not Found, etc.
+        mov rax, SYS_WRITE
+        mov rdi, [client_fd]
+        lea rsi, [http_404_not_found]
+        mov rdx, len_404_not_found
+        syscall
+        jmp client_disconnected
+
+
+handle_method_not_allowed:
+    mov rax, SYS_WRITE
+    mov rdi, [client_fd]
+    lea rsi, [http_405_not_allowed]
+    mov rdx, len_405_not_allowed
+    syscall
+    jmp client_disconnected
+
 
 client_disconnected:
     mov rax, SYS_CLOSE
@@ -267,7 +444,46 @@ client_disconnected:
 
 
 
+; Input: R15 = Total number of bytes read from the socket
+; Output on Success:
+;         RSI = pointer to the start of the body
+;         RDX = length of the body
+;         Carry Flag (CF) = 0
+; Output on Failure:
+;         Carry Flag (CF) = 1
+find_and_calc_body:
+    push rcx
+    xor rcx, rcx ; Start search from the beginning of the buffer
 
+.find_body_loop:
+    ; Check if we've searched past the end of the read data
+    cmp rcx, r15
+    jge .not_found ; If so, the separator was not found
+
+    ; Find the \r\n\r\n separator
+    cmp dword [client_buffer + rcx], 0x0A0D0A0D
+    je .found_body
+
+    inc rcx
+    jmp .find_body_loop
+
+.found_body:
+    ; Body starts 4 bytes after the separator
+    lea rsi, [client_buffer + rcx + 4]
+
+    ; Calculate body length: RDX = Total Size - Header Size - Separator Size
+    mov rdx, r15
+    sub rdx, rcx
+    sub rdx, 4
+
+    clc ; Clear Carry Flag to signal SUCCESS
+    pop rcx
+    ret
+
+.not_found:
+    stc ; Set Carry Flag to signal FAILURE
+    pop rcx
+    ret
 
 
 
