@@ -14,7 +14,7 @@ SRC = src
 BIN = bin
 
 # Nama file objek
-OBJS = $(addprefix $(BIN)/, server.o utils.o)
+OBJS = $(addprefix $(BIN)/, server.o utils.o mime.o http_handler.o)
 
 # Nama target executable
 TARGET = $(BIN)/http_server
