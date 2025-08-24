@@ -104,11 +104,149 @@ Cukup jalankan saja server seperti biasa, fitur ini adalah hal pertama yang akan
         syscall
 ```
 
-### 2. 
+### 2. Forking Child untuk setiap Request
+Untuk setiap koneksi berbeda dari client, server akan membuat proses baru sehingga server tidak harus berhenti untuk meng-*handle* satu *client*, dan dapat meng-*handle* beberapa *client*. Cara kerjanya dengan sebuah loop yang selalu berjalan pada server sebagai *parent process*. *Parent process* ini akan melakukan `fork` ketika ada *client* yang ingin melakukan koneksi.
+
+**Cara menggunakan** <br>
+Jalankan server seperti biasa, lalu buka `localhost:8080` pada browser. Untuk forking, buka lagi `localhost:8080` pada tab baru
+
+**Cuplikan Kode**
+```nasm
+    accept_loop:
+        mov rax, SYS_ACCEPT
+        mov rdi, [server_fd]
+        xor rsi, rsi
+        xor rdx, rdx
+        syscall
+
+        mov [client_fd], rax               ; Client FD
+
+        mov rax, SYS_FORK
+        syscall
+
+        cmp rax, 0                         ; retval of FORK
+        je child_process
+
+        ; --- Parent Process ---
+        mov rax, SYS_CLOSE
+        mov rdi, [client_fd]
+        syscall
+
+        jmp accept_loop
+```
+
+### 3. Parsing HTTP Methods
+Server dapat melakukan *parsing* pada *request* HTTP untuk mendapatkan metode yang diinginkan *client*. Cara kerjanya hanya dengan membaca bagian awal *request* dan mengambil string hingga spasi pertama.
+
+**Cara menggunakan** <br>
+Lakukan *request* dengan curl, bisa menggunakan salah satu dari baris perintah berikut:
+```bash
+    curl -i http://127.0.0.1:8080
+    curl -i -X POST http://127.0.0.1:8080
+    curl -i -X PUT http://127.0.0.1:8080
+    curl -i -X DELETE http://127.0.0.1:8080
+```
+
+**Cuplikan Kode**
+```nasm
+    child_process:
+        ; ... kode awal
+
+        ; --- Read Requests ---
+        mov rax, SYS_READ
+        mov rdi, [client_fd]
+        lea rsi, [client_buffer]
+        mov rdx, REQUEST_BUFFER_SIZE
+        syscall
+
+        mov r15, rax                       ; read data
+
+        ; --- Parse Method ---
+        lea rsi, [client_buffer]
+        mov [method_], rsi
+        .parse_method_loop:
+            cmp byte [rsi], ' '            ; First space
+            je .method_found
+            inc rsi
+            jmp .parse_method_loop
+
+        .method_found:
+            mov rdx, rsi
+            sub rdx, [method_]
+            mov [method_len], rdx
+
+            mov byte [rsi], 0              ; Null terminate method
+            inc rsi
+
+        ; ... bagian selanjutnya dari child_process
+```
+
+### 4. Melayani Permintaan File dan Routing 
+Server ini dapat melayani permintaan file statis dari direktori `./public` melalui method GET. Ketika *cleint* membuka suatu *route*, atau melakukan curl dengan GET pada route tersebut, server akan menggabungkan path dengan prefiks `./public`, lalu membuka dan mengirim file tersebut kepada *client*. <br>
+Route awal `/` ditranslasikan menjadi `./public/index.html`, sedangkan route lainnya akan di-*append* pada prefiks `./public`. <br>
+Jenis file yang dapat dilayani dijelaskan lebih lanjut pada bagian [kreativitas](#kreativitas)
+
+**Cara Menggunakan**
+- Melayani File <br>
+Untuk mencoba fitur pelayanan file, cukup buka halaman utama dari alamat server (defaultnya `localhost:8080`). Pada halaman tersebut ada beberapa *button* yang akan membawa ke route-route berbeda sesuai file, cukup tekan salah satu tombol untuk membuka file tersebut. (sebenarnya, berada di halaman utama sudah cukup untuk mencoba fitur ini, tapi *why not explore more?*)
+- Routing <br>
+Untuk routing, anda bisa mencoba menggunakan method PUT, POST dan DELETE. Lakukan salah satu perintah berikut pada route suatu file yang ada di `./public`
+```bash
+    curl -i -X POST http://127.0.0.1:8080
+    curl -i -X PUT http://127.0.0.1:8080
+    curl -i -X DELETE http://127.0.0.1:8080
+```
+
+**Cuplikan Kode** <br>
+Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup panjang, jika ingin melihatnya ada pada file `server.asm`, pada label `serve_static_file`.
+```nasm
+    handle_get:
+        mov rsi, [path_]
+        cmp byte [rsi], '/'
+        jne .serve_file
+
+        mov rdx, [path_len]
+        cmp rdx, 1
+        je .serve_index                    ; Serve index.html if path is '/'
+
+        jmp .serve_file
+
+        .serve_index:
+            lea rdi, [path_buffer]
+            lea rsi, [path_index]
+            mov rcx, 21                    ; Hardcoded length of index path cos im too lazy
+            rep movsb                      ; copy string
+
+            lea rdi, [path_buffer]
+            call serve_static_file
+            jmp client_disconnected
+
+        .serve_file:
+        ; appends ./public prefix then call to serve file
+            lea rdi, [path_buffer]
+            call build_path
+            mov byte [rdi], 0
+
+            lea rdi, [path_buffer]
+            call serve_static_file
+            jmp client_disconnected
+
+        not_found:
+            lea rdi, [path_404]
+            call serve_404
+            jmp client_disconnected
+        ret
+```
+**Screenshot Fitur** <br>
+`index.html`
+<img src="../img/ngasem_serve_file.png" width="900">
 
 
-## Refleksi
-- Kode tidak terlalu modular, saya mencoba 
+## Fitur Bonus
+### Kreativitas
+#### Melayani berbagai jenis file
+Implementasi ini terdapat pada file `mime.asm`. Server ini dapat melayani 
+
 
 ## Referensi
 - Searchable Syscall Table: https://filippo.io/linux-syscall-table

@@ -7,6 +7,8 @@ section .data
         .sin_addr   dd 0x00000000   ; menerima dari IP mana saja
         .sin_zero   dq 0            ; padding
     server_address_len equ $ - server_address
+    msg_listening db 'Listening on port 8080...', 0xA
+    len_listening equ $ - msg_listening
 
     
     msg_method      db "Method: "
@@ -76,7 +78,6 @@ section .text
     extern atoi
     extern strcmp
     extern get_mime_type
-    extern find_body
 
 
 _start:
@@ -112,6 +113,11 @@ _start:
     mov rsi, 10                        ; Connection queue
     syscall
 
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    lea rsi, [msg_listening]
+    mov rdx, len_listening
+    syscall
 
 accept_loop:
     mov rax, SYS_ACCEPT
@@ -182,11 +188,11 @@ child_process:
         sub rdx, [path_]
         mov [path_len], rdx
 
-    call print_parsing
+    call print_logging
     call handle_route
     jmp client_disconnected
 
-print_parsing:
+print_logging:
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     lea rsi, [msg_method]
@@ -455,35 +461,35 @@ find_and_calc_body:
     push rcx
     xor rcx, rcx ; Start search from the beginning of the buffer
 
-.find_body_loop:
-    ; Check if we've searched past the end of the read data
-    cmp rcx, r15
-    jge .not_found ; If so, the separator was not found
+    .find_body_loop:
+        ; Check if we've searched past the end of the read data
+        cmp rcx, r15
+        jge .not_found ; If so, the separator was not found
 
-    ; Find the \r\n\r\n separator
-    cmp dword [client_buffer + rcx], 0x0A0D0A0D
-    je .found_body
+        ; Find the \r\n\r\n separator
+        cmp dword [client_buffer + rcx], 0x0A0D0A0D
+        je .found_body
 
-    inc rcx
-    jmp .find_body_loop
+        inc rcx
+        jmp .find_body_loop
 
-.found_body:
-    ; Body starts 4 bytes after the separator
-    lea rsi, [client_buffer + rcx + 4]
+    .found_body:
+        ; Body starts 4 bytes after the separator
+        lea rsi, [client_buffer + rcx + 4]
 
-    ; Calculate body length: RDX = Total Size - Header Size - Separator Size
-    mov rdx, r15
-    sub rdx, rcx
-    sub rdx, 4
+        ; Calculate body length: RDX = Total Size - Header Size - Separator Size
+        mov rdx, r15
+        sub rdx, rcx
+        sub rdx, 4
 
-    clc ; Clear Carry Flag to signal SUCCESS
-    pop rcx
-    ret
+        clc ; Clear Carry Flag to signal SUCCESS
+        pop rcx
+        ret
 
-.not_found:
-    stc ; Set Carry Flag to signal FAILURE
-    pop rcx
-    ret
+    .not_found:
+        stc ; Set Carry Flag to signal FAILURE
+        pop rcx
+        ret
 
 
 
