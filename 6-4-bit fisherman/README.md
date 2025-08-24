@@ -1,5 +1,8 @@
 # 4-bit fisherman
-Simulasi koputer 4-bit pada Logisim.
+Simulasi komputer 4-bit pada Logisim.
+
+## Spesifikasi
+Buatlah sebuah simulasi komputer 4-bit. Simulasikan komponen CPU dan memori. Komponen CPU dapat menerima input angka dan operasi melalui button atau switch, sementara komponen memori digunakan untuk menyimpan output dari pengujian.
 
 ## Tabel Spesifikasi
 | Spesifikasi          | Sifat | Status |
@@ -7,7 +10,7 @@ Simulasi koputer 4-bit pada Logisim.
 | Komputer 4-bit      | Wajib | ✅ |
 | Buat di Terraria, Minecraft, atau Redstone Simulator  | Bonus | ❌ |
 | Seven Segment Display       | Bonus | ✅ |
-| Perkalian dan Pembagian       | Bonus | ❌ |
+| Perkalian dan Pembagian       | Bonus | Hanya perkalian |
 
 ## Link
 - Video Demo: [youtube](https://youtu.be/dPlMSM7hldc), [gdrive](https://drive.google.com/file/d/1JOrRPo1UfNXKwaPdZUgu2bShDKTdQ4za/view?usp=drive_link)
