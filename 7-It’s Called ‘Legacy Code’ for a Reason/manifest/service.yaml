@@ -4,7 +4,6 @@ kind: Service
 metadata:
   name: cobol-service
 spec:
-  type: LoadBalancer
   selector:
     app: cobol-app 
   ports:
