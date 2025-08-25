@@ -1,5 +1,5 @@
-# 4-bit fisherman
-Simulasi koputer 4-bit pada Logisim.
+# $BTC
+Simulasi ***Bitcoin Betwork*** sederhana.
 
 ## Tabel Spesifikasi
 | Spesifikasi          | Sifat | Status |
@@ -10,41 +10,77 @@ Simulasi koputer 4-bit pada Logisim.
 | Chain Synchronization| Wajib | ✅ |
 | Data Persistence | Wajib | ✅ |
 
-## Link
-How to test:
-Run server with 
+Youtube Video - [youtube.com]()
+
+## Deskripsi
+Proyek ini adalah implementasi sederhana dari jaringan blockchain yang ditulis dalam bahasa Python. Aplikasi ini mensimulasikan fungsionalitas inti dari blockchain, seperti mining, transaksi, dan mekanisme konsensus antar-node.
+
+Jaringan ini berjalan secara lokal, setiap node adalah server API Flask yang independen. Saya juga membuat aplikasi klien berbasis CLI untuk mempermudah menggunakan jaringan ini.
+
+*Source code* utama
+- `api.py`
+- `block.py`
+- `blockchain.py`
+
+
+Lainnya
+- `cli.py` - program CLI untuk mempermudah testing dan demo 
+- `testing.md` - panduan langkah-langkah untuk mengetes fitur pada *network*
+- `API.md` - dokumentasi API 
+
+---
+
+## Cara Menggunakan
+
+### Prerequisites
+
+- Python 3
+- `pip` (Python *package installer*)
+
+Lakukan instalasi *dependency* Python dengan `pip install -r requirements.txt`
+
+### Jalankan Node
+
+Buka beberapa jendela terminal untuk menjalankan node di port yang berbeda.
+
+**Terminal 1 (Node 1):**
 ```bash
-python api.py
+python api.py -p 5000
 ```
-atau
+
+**Terminal 2 (Node 2):**
+```bash
+python api.py -p 5001
+```
+
+**Terminal 3 (Node 3):**
+```bash
+python api.py -p 5002
+```
+
+### Menggunakan Client Admin
+
+Buka terminal baru untuk menjalankan aplikasi CLI.
 
 ```bash
-python api.py --port <PORT_NUMBER>
+python cli.py
 ```
 
-Jika berjalan pada port 5000    
-
-- Mining blok
-```bash
-curl http://127.0.0.1:5000/mine
+Anda akan disambut dengan menu interaktif. Berikut penjelasan masing-masing opsi:
 ```
-- Send Transaction
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"sender": "budi", "recipient": "siti", "amount": 5}' http://127.0.0.1:5000/transactions/new
-```
-
-- Mine again to insert transaction to blobk
-```bash
-curl http://127.0.0.1:5000/mine
-```
-
-- View Chain
-```bash
-curl http://127.0.0.1:5000/chain
+====== Blockchain Network CLI ======
+1. Mine a New Block                - melakukan mining sebuah block
+2. Display Full Chain              - menampilkan chain dari node tertentu
+3. Add a New Transaction           - menambahkan transaksi baru ke dalam pool
+4. Display Transaction Pool        - melihat daftar transaksi yang sedang pending
+5. Register New Nodes              - mendaftarkan satu atau beberapa node pada node tertentu
+6. List Registered Nodes           - menampilkan semua node yang terdaftar pada node tertentu
+7. Register All Nodes              - saling mendaftarkan semua node yang diinginkan
+8. Resolve Conflicts (Sync)        - melakukan syncing chain secara manual
+9. Set PoW Difficulty              - mengatur difficulty dari proof of work
+10. Clear Screen
+0. Exit
 ```
 
-- Mendaftarkan Nodes
-Mendaftarkan node pada port 5001 ke node port 5000
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"nodes": ["http://127.0.0.1:5001"]}' http://127.0.0.1:5000/nodes/register
-```
+### Melakukan Request Manual
+Jika ingin melakukan request manual menggunakan `curl` atau lainnya, sudah disediakan [dokumentasi API](./API.md")
