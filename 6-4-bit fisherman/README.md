@@ -13,6 +13,6 @@ Buatlah sebuah simulasi komputer 4-bit. Simulasikan komponen CPU dan memori. Kom
 | Perkalian dan Pembagian       | Bonus | Hanya perkalian |
 
 ## Link
-- Video Demo: [youtube](https://youtu.be/dPlMSM7hldc), [gdrive](https://drive.google.com/file/d/1JOrRPo1UfNXKwaPdZUgu2bShDKTdQ4za/view?usp=drive_link)
+- Video Demo: [youtube](https://youtu.be/tylKzbMAVVE), [gdrive](https://drive.google.com/file/d/13oj-vG-92tNJh1Vww62k0nOXwffzI8Ps/view?usp=sharing)
 - Sheets untuk *truth tables*: [*link*](https://docs.google.com/spreadsheets/d/186fdGKruVM5cYPrMvspCi6ksQ83XLuEFtt_GevGD35Y/edit?gid=0#gid=0)
 - Diagram K-map: [*link*](https://drive.google.com/file/d/1ij7iPc0fEdwdNVKVWO-ETS6McNCzUdNn/view?usp=sharing)
