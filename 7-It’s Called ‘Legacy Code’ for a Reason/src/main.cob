@@ -48,12 +48,13 @@
 
        
        77 RAI-TO-IDR-RATE    PIC 9(9) VALUE 120000000.
+       77 MAX-BALANCE           PIC 9(10)V99 VALUE 9999999999.99.
 
       * INTEREST
        77 ARGUMENT            PIC X(20).
        77 INTEREST-MODE       PIC X VALUE "N".
            88 INTEREST-MODE-ACTIVE VALUE "Y".
-       77 INTEREST-RATE       PIC 9V999 VALUE 0.250.
+       77 INTEREST-RATE       PIC 9V99999  VALUE 0.00250.
        77 INTEREST-AMOUNT     PIC 9(10)V99.
        77 DISPLAY-BALANCE    PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99.
        77 DISPLAY-INTEREST   PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99.
@@ -99,7 +100,7 @@
 
            MOVE IN-RECORD(1:6) TO IN-ACCOUNT
            MOVE IN-RECORD(7:3) TO IN-ACTION
-           MOVE FUNCTION NUMVAL(IN-RECORD(10:13)) TO IN-AMOUNT.
+           MOVE FUNCTION NUMVAL(IN-RECORD(10:9)) TO IN-AMOUNT.
 
        PROCESS-RECORDS.
            OPEN INPUT ACC-FILE
@@ -130,6 +131,9 @@
                    MOVE "ACCOUNT ALREADY EXISTS" TO OUT-RECORD
                WHEN "DEP"
                    ADD IN-AMOUNT TO TMP-BALANCE
+                       ON SIZE ERROR
+                            MOVE MAX-BALANCE TO TMP-BALANCE
+                   END-ADD
                    MOVE "DEPOSITED MONEY" TO OUT-RECORD
                WHEN "WDR"
                     IF IN-AMOUNT > TMP-BALANCE
@@ -203,7 +207,12 @@
                        COMPUTE INTEREST-AMOUNT =
                            ACC-BALANCE * INTEREST-RATE
 
-                       ADD INTEREST-AMOUNT TO ACC-BALANCE
+                       IF ACC-BALANCE NOT = MAX-BALANCE
+                           ADD INTEREST-AMOUNT TO ACC-BALANCE
+                               ON SIZE ERROR
+                                   MOVE MAX-BALANCE TO ACC-BALANCE
+                           END-ADD
+                       END-IF
 
                        MOVE ACC-BALANCE TO DISPLAY-BALANCE
                        MOVE INTEREST-AMOUNT TO DISPLAY-INTEREST
