@@ -22,7 +22,7 @@ def mine() -> tuple[dict[str, any], int]:
         amount=round(random.uniform(0.1, 5.0), 4),
     )
     
-    pending_txs = list(blockchain.pending_transactions)
+    pending_txs = list(blockchain.transactions_pool)
     merkle_root = Blockchain.build_merkle_root(pending_txs)
 
     previous_hash = last_block.compute_hash()
@@ -43,7 +43,7 @@ def mine() -> tuple[dict[str, any], int]:
     for node_address in blockchain.nodes:
         node_resps = {"address": node_address}
         try:
-            app.logger.info(f"Mencoba mengirim blok ke {node_address}...")
+            app.logger.info(f"Trying to send block to {node_address}...")
             res = requests.post(f'http://{node_address}/nodes/receive_block', json=mined_block.to_dict())
             try:
                 node_resps["response"] = res.json()
@@ -54,7 +54,7 @@ def mine() -> tuple[dict[str, any], int]:
 
         broadcast_resps.append(node_resps)
     response = {
-        'message': "Blok baru berhasil ditambang dan disebarkan!",
+        'message': "New Block mined and distributed succesfully!",
         'block': mined_block.to_dict(),
         'nodes_responses': broadcast_resps,
     }
@@ -74,20 +74,21 @@ def full_chain() -> tuple[dict[str, any], int]:
 def set_difficulty() -> tuple[dict[str, any], int]:
     values = request.get_json()
     if not values:
-        return jsonify({'message': 'Error: Mohon sediakan data'}), 400
+        return jsonify({'message': 'Error: invalid data'}), 400
 
     difficulty_level = values.get('difficulty')
     if difficulty_level is None or not isinstance(difficulty_level, int):
-        return jsonify({'message': 'Error: Mohon sediakan nilai "difficulty" dalam bentuk integer'}), 400
+        return jsonify({'message': 'Error: difficulty must be an integer!'}), 400
 
     # Update atribut difficulty di objek blockchain
     blockchain.difficulty = difficulty_level
 
     response = {
-        'message': 'Tingkat kesulitan berhasil diubah.',
+        'message': 'Difficulty changed succesfully',
         'new_difficulty': blockchain.difficulty
     }
     return jsonify(response), 200
+
 
 # ==================== TRANSACTIONS ==================================
 @app.route('/transaction/new', methods=['POST'])
@@ -95,17 +96,16 @@ def new_transaction() -> tuple[dict[str, str], int]:
     values = request.get_json()
     required = ['sender', 'recipient', 'amount']
     if not all(k in values for k in required):
-        return jsonify({'message': 'Data tidak lengkap'}), 400
+        return jsonify({'message': 'Error: Invalid data'}), 400
 
     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
-    response = {'message': f'Transaksi akan ditambahkan ke Blok {index}'}
+    response = {'message': f'Transaction will be added to Block {index}'}
     return jsonify(response), 201
 
 
-@app.route('/transaction/pending', methods=['GET'])
-def get_pending_transactions():
-    """Returns the list of pending transactions."""
-    return jsonify(blockchain.pending_transactions), 200
+@app.route('/transaction/pool', methods=['GET'])
+def get_transactions_pool():
+    return jsonify(blockchain.transactions_pool), 200
 
 
 # ============================= NODES =================================================
@@ -115,13 +115,13 @@ def register_nodes() -> tuple[dict[str, any], int]:
 
     nodes = values.get('nodes')
     if nodes is None:
-        return jsonify({'message': 'Error: Mohon sediakan daftar node yang valid'}), 400
+        return jsonify({'message': 'Error: Invalid node list'}), 400
 
     for node in nodes:
         blockchain.register_node(node)
 
     response = {
-        'message': 'Node baru telah ditambahkan',
+        'message': 'New node added',
         'total_nodes': list(blockchain.nodes),
     }
     return jsonify(response), 201
@@ -133,12 +133,12 @@ def consensus() -> tuple[dict[str, any], int]:
 
     if replaced:
         response = {
-            'message': 'Rantai kami telah diganti dengan yang otoritatif',
+            'message': 'Our chain has been switched to the most authoritative chain',
             'new_chain': [block.to_dict() for block in blockchain.chain]
         }
     else:
         response = {
-            'message': 'Rantai kami sudah yang paling otoritatif',
+            'message': 'Our chain is already the most authoritative',
             'chain': [block.to_dict() for block in blockchain.chain]
         }
 
@@ -150,7 +150,7 @@ def get_nodes() -> tuple[dict[str, any], int]:
     """Mengembalikan daftar semua node yang terdaftar."""
     nodes = list(blockchain.nodes)
     response = {
-        'message': 'Menampilkan semua node terdaftar',
+        'message': 'Showing all registered nodes',
         'nodes': nodes
     }
     return jsonify(response), 200
@@ -158,10 +158,9 @@ def get_nodes() -> tuple[dict[str, any], int]:
 
 @app.route('/nodes/receive_block', methods=['POST'])
 def receive_block() -> tuple[dict[str, str], int]:
-    app.logger.info("Menerima permintaan di /nodes/receive_block...")
     block_data = request.get_json()
     if not block_data:
-        return jsonify({'message': 'Error: Tidak ada data blok'}), 400
+        return jsonify({'message': 'Error: Block data not found'}), 400
 
     last_block = blockchain.last_block
     
@@ -177,23 +176,23 @@ def receive_block() -> tuple[dict[str, str], int]:
         )
         
         if block_data['hash'] != received_block.compute_hash():
-            return jsonify({'message': 'Blok ditolak: Hash tidak cocok (integritas gagal)'}), 400
+            return jsonify({'message': 'Block rejected: invalid hash'}), 400
 
         if not blockchain.is_hash_valid(block_data['hash']):
-            return jsonify({'message': 'Blok ditolak: Proof of Work tidak valid'}), 400
+            return jsonify({'message': 'Block rejected: invalid Proof of Work tidak'}), 400
         
         # VALID
         received_block.hash = block_data['hash']
         blockchain.add_block(received_block)
-        return jsonify({'message': 'Blok baru diterima dan ditambahkan'}), 201
+        return jsonify({'message': 'New Block accepted and added to chain'}), 201
     
     # Konsensus (longest chain)
     else:
         is_chain_replaced = blockchain.resolve_conflicts()
         if is_chain_replaced:
-            return jsonify({'message': 'Konflik terdeteksi. Rantai diganti.'}), 200
+            return jsonify({'message': 'Conflict detected, switching chain.'}), 200
         else:
-            return jsonify({'message': 'Blok diterima dari fork pendek, rantai tidak diganti.'}), 200
+            return jsonify({'message': 'Block accepted from shorter fork, chain is not switched'}), 200
 
 
 if __name__ == '__main__':

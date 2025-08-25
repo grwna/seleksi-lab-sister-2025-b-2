@@ -17,7 +17,7 @@ def print_menu():
     print("1. Mine a New Block")
     print("2. Display Full Chain")
     print("3. Add a New Transaction")
-    print("4. Display Pending Transactions")
+    print("4. Display Transaction Pool")
     print("5. Register New Nodes")
     print("6. List Registered Nodes")
     print("7. Register All Nodes")
@@ -78,11 +78,11 @@ def handle_new_transaction():
         print(f"\n[!] Connection Error: Could not connect to node at port {port}. Is it running?")
 
 
-def handle_pending_transactions():
+def handle_transaction_pool():
     """Fetches and displays the list of pending transactions from a node."""
     try:
         port = input("Enter target node port: ")
-        url = f"http://127.0.0.1:{port}/transaction/pending"
+        url = f"http://127.0.0.1:{port}/transaction/pool"
         response = requests.get(url, timeout=10)
         handle_response(response)
     except ValueError:
@@ -157,6 +157,7 @@ def handle_resolve_conflicts():
     except requests.exceptions.RequestException as e:
         print(f"\n[!] Connection Error: Could not connect to node at port {port}. Is it running?")
         
+
 def handle_list_nodes():
     try:
         port = input("Enter node port: ")
@@ -167,7 +168,8 @@ def handle_list_nodes():
         print("\n[!] Invalid port. Please enter a number.")
     except requests.exceptions.RequestException as e:
         print(f"\n[!] Connection Error: Could not connect to node at port {port}. Is it running?")
-        
+
+
 def handle_set_difficulty():
     try:
         port = input("Enter node port: ")
@@ -198,7 +200,7 @@ def main():
         elif choice == '3':
             handle_new_transaction()
         elif choice == '4':
-            handle_pending_transactions()
+            handle_transaction_pool()
         elif choice == '5':
             handle_register_nodes()
         elif choice == '6':

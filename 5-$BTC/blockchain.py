@@ -8,7 +8,7 @@ import datetime
 
 class Blockchain:
     def __init__(self):
-        self.pending_transactions: list[dict[str, any]] = []
+        self.transactions_pool: list[dict[str, any]] = []
         self.chain : list[Block] = []
         self.nodes: set[str] = set()
         self.difficulty: int = 4
@@ -35,7 +35,7 @@ class Blockchain:
 
 
     def new_transaction(self, sender, recipient, amount) -> int:
-        self.pending_transactions.append({
+        self.transactions_pool.append({
             'sender': sender,
             'recipient': recipient,
             'amount': amount,
@@ -68,7 +68,7 @@ class Blockchain:
             return False
 
         self.chain.append(block)
-        self.pending_transactions = []
+        self.transactions_pool = []
         return True
     
     def register_node(self, address: str) -> None:
@@ -120,7 +120,6 @@ class Blockchain:
         return True
     
     
-    # Konsensus
     def resolve_conflicts(self) -> bool:
         neighbours = self.nodes
         new_chain_objects = None
@@ -167,7 +166,7 @@ class Blockchain:
                     tx_string = json.dumps(tx, sort_keys=True)
                     if tx_string not in new_chain_transactions:
                         if tx.get('sender') != '0':
-                            self.pending_transactions.append(tx)
+                            self.transactions_pool.append(tx)
             
             self.chain = new_chain_objects
             return True
