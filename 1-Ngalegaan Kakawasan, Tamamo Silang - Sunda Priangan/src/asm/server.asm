@@ -58,7 +58,7 @@ section .text
     global serve_static_file
     global client_disconnected
 
-    extern itoa, atoi, strcmp, append
+    extern itoa, atoi, asm_strcmp, append
     extern get_mime_type
     extern find_and_calc_body
     extern handle_get, handle_delete, handle_post, handle_put, handle_method_not_allowed
@@ -66,6 +66,7 @@ section .text
 
     extern http_200_ok
     extern len_200_ok
+    extern exit
 
 
 _start:
@@ -218,28 +219,28 @@ handle_route:
 
     ; GET
     lea rsi, [method_get_str]
-    call strcmp
+    call asm_strcmp
     cmp rax, 0
     je handle_get
 
     ; POST
     lea rsi, [method_post_str]
     mov rdi, [method_]
-    call strcmp
+    call asm_strcmp
     cmp rax, 0
     je handle_post
 
     ; PUT
     lea rsi, [method_put_str]
     mov rdi, [method_]
-    call strcmp
+    call asm_strcmp
     cmp rax, 0
     je handle_put
 
     ; DELETE
     lea rsi, [method_delete_str]
     mov rdi, [method_]
-    call strcmp
+    call asm_strcmp
     cmp rax, 0
     je handle_delete
 
@@ -251,10 +252,10 @@ client_disconnected:
     mov rdi, [client_fd]
     syscall
 
-    mov rax, SYS_EXIT
+    ; mov rax, SYS_EXIT
     xor rdi, rdi
-    syscall
-
+    ; syscall
+    call exit
 
 
 serve_static_file:

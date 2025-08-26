@@ -1,7 +1,7 @@
 section .text
     global itoa
     global atoi
-    global strcmp
+    global asm_strcmp
     global append
 
 ; itoa(int num, char* buffer)
@@ -60,7 +60,7 @@ atoi:
     .done:
         ret
 
-strcmp:
+asm_strcmp:
     .loop:
         mov al, [rdi]
         mov bl, [rsi]

@@ -67,7 +67,7 @@ section .text
     global handle_get, handle_delete, handle_post, handle_put, handle_method_not_allowed
     global not_found, send_status
 
-    extern atoi, strcmp
+    extern atoi, asm_strcmp
     extern client_disconnected, serve_static_file
     extern handle_plugin_request
 
@@ -124,22 +124,25 @@ build_path:
 
 
 handle_get:
-    ; push rdi
-    ; push rsi
-    ; push rcx
+    push rdi
+    push rsi
+    push rcx
+    push rbp
 
-    ; ; handle plugin
-    ; mov rdi, [path_]
-    ; mov rsi, plugin_path
-    ; mov rcx, 8
+    ; handle plugin
+    mov rdi, [path_]
+    mov rsi, plugin_path
+    mov rcx, 8
 
-    ; cld
-    ; repe cmpsb
-    ; je .call_plugin
+    cld
+    repe cmpsb
+    je .call_plugin
 
-    ; pop rdi
-    ; pop rsi
-    ; pop rcx
+    pop rbp
+    pop rcx
+    pop rsi
+    pop rdi
+
 
     mov rsi, [path_]
     cmp byte [rsi], '/'
@@ -171,14 +174,19 @@ handle_get:
         call serve_static_file
         jmp client_disconnected
 
-    ; .call_plugin:
-    ;     mov rdi, [client_fd]
-    ;     mov rsi, [method_]
-    ;     mov rdx, [path_]
-    ;     call handle_plugin_request
+    .call_plugin:
+        mov rdi, [client_fd]
+        mov rsi, [method_]
+        mov rdx, [path_]
+        call handle_plugin_request
 
-    ;     jmp client_disconnected
-    ; ret
+        pop rbp
+        pop rcx
+        pop rsi
+        pop rdi
+
+        jmp client_disconnected
+    ret
 
 not_found:
     lea rdi, [path_404]
