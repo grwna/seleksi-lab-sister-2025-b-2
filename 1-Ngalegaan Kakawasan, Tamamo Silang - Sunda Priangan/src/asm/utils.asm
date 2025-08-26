@@ -2,6 +2,7 @@ section .text
     global itoa
     global atoi
     global strcmp
+    global append
 
 ; itoa(int num, char* buffer)
 itoa:
@@ -74,3 +75,27 @@ strcmp:
         sub al, bl
         movsx rax, al
         ret
+
+;   rdi - Pointer to the destination buffer (must have enough space).
+;   rsi - Pointer to the null-terminated source string to append.
+;
+;   rdi - Points to the new null terminator of the concatenated string.
+append:
+    push    rcx
+    push    rax
+
+    ; Find  null terminator
+    mov     rcx, -1                 ; Max possible length
+    xor     al, al
+    repne   scasb 
+    dec     rdi                     ; Go back one byte to overwrite the original null
+
+.copy_loop:
+    lodsb 
+    stosb 
+    test    al, al
+    jnz     .copy_loop              ; If not null byte, continue copying
+
+    pop     rax                     ; Restore registers
+    pop     rcx
+    ret

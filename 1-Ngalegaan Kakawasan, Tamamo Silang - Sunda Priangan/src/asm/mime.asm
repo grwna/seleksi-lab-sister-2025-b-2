@@ -76,6 +76,8 @@ section .data
         dq ext_md,  mime_md,  len_md
         dq 0 
 
+    global mime_txt, len_txt
+
 section .text
     global get_mime_type
 

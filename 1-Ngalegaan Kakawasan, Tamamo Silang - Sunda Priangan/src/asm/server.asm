@@ -1,4 +1,4 @@
-%include "src/constants.inc"
+%include "src/asm/constants.inc"
 
 section .data
     server_address:
@@ -19,12 +19,6 @@ section .data
 
     reuse_opt dd 1
 
-    ; HTTP Status Lines
-    http_200_ok         db 'HTTP/1.1 200 OK', 13, 10
-    len_200_ok          equ $ - http_200_ok
-    http_404_not_found  db 'HTTP/1.1 404 Not Found', 13, 10
-    len_404_not_found   equ $ - http_404_not_found
-
     ; HTTP Headers
     header_content_type_html db 'Content-Type: text/html; charset=utf-8', 13, 10
     len_content_type_html    equ $ - header_content_type_html
@@ -34,29 +28,13 @@ section .data
     crlf                db 13, 10 ; Karakter baris baru (CRLF) untuk akhir header
     len_crlf            equ $ - crlf
 
-    ; Path ke file-file
-    path_index          db './public/index.html', 0
-    path_404            db './public/404.html', 0
-    path_prefix         db './public'
-    len_prefix          equ $ - path_prefix
-
-
-    ; =================== METHODS ============================
-    http_201_created    db 'HTTP/1.1 201 Created', 13, 10
-    len_201_created     equ $ - http_201_created
-    http_405_not_allowed db 'HTTP/1.1 405 Method Not Allowed', 13, 10
-    len_405_not_allowed  equ $ - http_405_not_allowed
-    http_409_conflict   db 'HTTP/1.1 409 Conflict', 13, 10
-    len_409_conflict    equ $ - http_409_conflict
-    http_500_error      db 'HTTP/1.1 500 Internal Server Error', 13, 10
-    len_500_error       equ $ - http_500_error
+    html_ext            db '.html', 0           ; to force mime type to html
 
     ; Method strings for comparison
     method_get_str      db 'GET', 0
     method_post_str     db 'POST', 0
     method_put_str      db 'PUT', 0
     method_delete_str   db 'DELETE', 0
-
 
 section .bss
     server_fd resq 1
@@ -71,13 +49,23 @@ section .bss
 
     path_buffer resb 256
 
+    global client_fd
+    global client_buffer
+    global path_, path_len, path_buffer, method_
+
 section .text
     global _start
     global serve_static_file
-    extern itoa
-    extern atoi
-    extern strcmp
+    global client_disconnected
+
+    extern itoa, atoi, strcmp, append
     extern get_mime_type
+    extern find_and_calc_body
+    extern handle_get, handle_delete, handle_post, handle_put, handle_method_not_allowed
+    extern not_found
+
+    extern http_200_ok
+    extern len_200_ok
 
 
 _start:
@@ -143,6 +131,8 @@ accept_loop:
 
 
 child_process:
+    and rsp, -16        ; align stack for plugin
+
     mov rax, SYS_CLOSE
     mov rdi, [server_fd]
     syscall
@@ -255,186 +245,6 @@ handle_route:
 
     jmp handle_method_not_allowed
 
-    
-build_path:
-    push rcx
-    push rsi
-
-    lea rsi, [path_prefix]
-    mov rcx, len_prefix
-    rep movsb
-
-    mov rsi, [path_]
-    mov rcx, [path_len]
-    rep movsb
-
-    pop rsi
-    pop rcx
-    ret
-
-handle_get:
-    mov rsi, [path_]
-    cmp byte [rsi], '/'
-    jne .serve_file
-
-    mov rdx, [path_len]
-    cmp rdx, 1
-    je .serve_index                    ; Serve index.html if path is '/'
-
-    jmp .serve_file
-
-    .serve_index:
-        lea rdi, [path_buffer]
-        lea rsi, [path_index]
-        mov rcx, 21                    ; Hardcoded length of index path cos im too lazy
-        rep movsb                      ; copy string
-
-        lea rdi, [path_buffer]
-        call serve_static_file
-        jmp client_disconnected
-
-    .serve_file:
-    ; appends ./public prefix then call to serve file
-        lea rdi, [path_buffer]
-        call build_path
-        mov byte [rdi], 0
-
-        lea rdi, [path_buffer]
-        call serve_static_file
-        jmp client_disconnected
-
-    not_found:
-        lea rdi, [path_404]
-        call serve_404
-        jmp client_disconnected
-    ret
-
-
-handle_put:
-    lea rdi,  [path_buffer]
-    call build_path
-    mov byte [rdi], 0
-
-    mov rax, SYS_OPEN
-    lea rdi, [path_buffer]
-    mov rsi, O_WRONLY | O_CREAT | O_TRUNC
-    mov rdx, 0644o                     ; permission
-    syscall
-
-    cmp rax, 0
-    jl .put_failed  
-
-    mov r12, rax
-
-    call find_and_calc_body
-    jc .put_failed
-
-
-    ; Write body to file
-    mov rax, SYS_WRITE
-    mov rdi, r12 ; file fd
-    syscall
-
-    mov rax, SYS_CLOSE
-    mov rdi, r12
-    syscall
-
-    mov rax, SYS_WRITE
-    mov rdi, [client_fd]
-    lea rsi, [http_200_ok]
-    mov rdx, len_200_ok
-    syscall
-    jmp client_disconnected
-
-    .put_failed:
-        mov rax, SYS_WRITE
-        mov rdi, [client_fd]
-        lea rsi, [http_500_error]
-        mov rdx, len_500_error
-        syscall
-        jmp client_disconnected
-
-handle_post:
-    lea rdi,  [path_buffer]
-    call build_path
-    mov byte [rdi], 0
-
-    mov rax, SYS_OPEN
-    lea rdi, [path_buffer]
-    mov rsi, O_WRONLY | O_CREAT | O_EXCL
-    mov rdx, 0644o                     ; permission
-    syscall
-
-    cmp rax, 0
-    jl .post_failed
-
-    mov r12, rax
-
-    call find_and_calc_body
-    jc .post_failed
-
-    ; Write body to file
-    mov rax, SYS_WRITE
-    mov rdi, r12 ; file fd
-    syscall
-
-    mov rax, SYS_CLOSE
-    mov rdi, r12
-    syscall
-
-    mov rax, SYS_WRITE
-    mov rdi, [client_fd]
-    lea rsi, [http_201_created]
-    mov rdx, len_201_created
-    syscall
-    jmp client_disconnected
-
-    .post_failed:
-        mov rax, SYS_WRITE
-        mov rdi, [client_fd]
-        lea rsi, [http_409_conflict]
-        mov rdx, len_409_conflict
-        syscall
-        jmp client_disconnected
-
-handle_delete:
-    lea rdi, [path_buffer]
-    call build_path
-    mov byte [rdi], 0
-
-    mov rax, SYS_UNLINK
-    lea rdi, [path_buffer]
-    syscall
-
-    cmp rax, 0
-    jl .delete_failed
-
-    ; SUCCESS 200
-    mov rax, SYS_WRITE
-    mov rdi, [client_fd]
-    lea rsi, [http_200_ok]
-    mov rdx, len_200_ok
-    syscall
-    jmp client_disconnected
-
-    .delete_failed:
-        ; Could be 404 Not Found, etc.
-        mov rax, SYS_WRITE
-        mov rdi, [client_fd]
-        lea rsi, [http_404_not_found]
-        mov rdx, len_404_not_found
-        syscall
-        jmp client_disconnected
-
-
-handle_method_not_allowed:
-    mov rax, SYS_WRITE
-    mov rdi, [client_fd]
-    lea rsi, [http_405_not_allowed]
-    mov rdx, len_405_not_allowed
-    syscall
-    jmp client_disconnected
-
 
 client_disconnected:
     mov rax, SYS_CLOSE
@@ -444,54 +254,6 @@ client_disconnected:
     mov rax, SYS_EXIT
     xor rdi, rdi
     syscall
-
-
-
-
-
-
-; Input: R15 = Total number of bytes read from the socket
-; Output on Success:
-;         RSI = pointer to the start of the body
-;         RDX = length of the body
-;         Carry Flag (CF) = 0
-; Output on Failure:
-;         Carry Flag (CF) = 1
-find_and_calc_body:
-    push rcx
-    xor rcx, rcx ; Start search from the beginning of the buffer
-
-    .find_body_loop:
-        ; Check if we've searched past the end of the read data
-        cmp rcx, r15
-        jge .not_found ; If so, the separator was not found
-
-        ; Find the \r\n\r\n separator
-        cmp dword [client_buffer + rcx], 0x0A0D0A0D
-        je .found_body
-
-        inc rcx
-        jmp .find_body_loop
-
-    .found_body:
-        ; Body starts 4 bytes after the separator
-        lea rsi, [client_buffer + rcx + 4]
-
-        ; Calculate body length: RDX = Total Size - Header Size - Separator Size
-        mov rdx, r15
-        sub rdx, rcx
-        sub rdx, 4
-
-        clc ; Clear Carry Flag to signal SUCCESS
-        pop rcx
-        ret
-
-    .not_found:
-        stc ; Set Carry Flag to signal FAILURE
-        pop rcx
-        ret
-
-
 
 
 
@@ -594,22 +356,9 @@ serve_static_file:
         ret
     
     .file_open_error:
+        lea rdi, [path_buffer]
+        lea rsi, [html_ext]
+        call append
+
+
         jmp not_found
-
-
-
-
-serve_404:
-    ; --- Kirim Header 404 Not Found ---
-    mov rax, SYS_WRITE
-    mov rdi, [client_fd]
-    lea rsi, [http_404_not_found]
-    mov rdx, len_404_not_found
-    syscall
-    
-    ; Di sini kita bisa langsung menyajikan file 404.html
-    lea rdi, [path_404]
-    call serve_static_file ; Panggil lagi serve_static_file untuk 404.html
-    ret
-
-
