@@ -1,0 +1,6 @@
+=== Plugin API Help ===
+
+Available routes:
+- /plugin/random : Generates a random number.
+- /plugin/hello  : Displays a personalized welcome message. Use with params name
+                   ex. /plugin/hello?name=grwna
