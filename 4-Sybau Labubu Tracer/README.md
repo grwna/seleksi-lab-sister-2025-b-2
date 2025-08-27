@@ -27,3 +27,7 @@ Simulasi jaringan 4 negara yang dibuat dalam Cisco Packet Tracer
 
 ## Link
 Dokumen Spesifikasi: PDF or [Gdocs](https://docs.google.com/document/d/1HJAsuUb5M0gCulmKjnL_Vm23Ah-0Tkna_8hAajCNze0/edit?usp=sharing)
+
+>[!note]
+>Ketika melakukan testing, pastikan setiap PC telah mendapat alamat melalui DHCP <br>
+>Proses ini terkadang memakan waktu yang cukup lama
