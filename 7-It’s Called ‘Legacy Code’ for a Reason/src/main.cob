@@ -58,6 +58,7 @@
        77 INTEREST-AMOUNT     PIC 9(10)V99.
        77 DISPLAY-BALANCE    PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99.
        77 DISPLAY-INTEREST   PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.99.
+       77 DISPLAY-RAI-BALANCE   PIC ZZZ,ZZZ,ZZZ,ZZ9.99.
 
        PROCEDURE DIVISION.
            
@@ -148,10 +149,15 @@
                    COMPUTE IDR-BALANCE = TMP-BALANCE * RAI-TO-IDR-RATE
                    MOVE IDR-BALANCE TO DISPLAY-BALANCE
                    MOVE DISPLAY-BALANCE TO BALANCE-OUT
+                   MOVE TMP-BALANCE TO DISPLAY-RAI-BALANCE
+
                    STRING BALANCE-TEXT DELIMITED SIZE
-                          "IDR " DELIMITED SIZE
-                          FUNCTION TRIM(BALANCE-OUT) DELIMITED SIZE
-                          INTO OUT-RECORD
+                   "Rai " DELIMITED BY SIZE
+                    FUNCTION TRIM(DISPLAY-RAI-BALANCE) DELIMITED BY SIZE
+                    " (IDR " DELIMITED BY SIZE
+                    FUNCTION TRIM(BALANCE-OUT) DELIMITED BY SIZE
+                    ")" DELIMITED BY SIZE
+                    INTO OUT-RECORD
                WHEN OTHER
                    MOVE "UNKNOWN ACTION" TO OUT-RECORD
            END-EVALUATE
