@@ -1,5 +1,5 @@
 # $BTC
-Simulasi ***Bitcoin Betwork*** sederhana.
+Simulasi ***Bitcoin Network*** sederhana.
 
 ## Tabel Spesifikasi
 | Spesifikasi          | Sifat | Status |
@@ -10,7 +10,7 @@ Simulasi ***Bitcoin Betwork*** sederhana.
 | Chain Synchronization| Wajib | ✅ |
 | Data Persistence | Wajib | ✅ |
 
-Youtube Video - [youtube.com]()
+Youtube Video - [https://youtu.be/ihMj_ZLK--Q](https://youtu.be/ihMj_ZLK--Q)
 
 ## Deskripsi
 Proyek ini adalah implementasi sederhana dari jaringan blockchain yang ditulis dalam bahasa Python. Aplikasi ini mensimulasikan fungsionalitas inti dari blockchain, seperti mining, transaksi, dan mekanisme konsensus antar-node.
@@ -18,17 +18,40 @@ Proyek ini adalah implementasi sederhana dari jaringan blockchain yang ditulis d
 Jaringan ini berjalan secara lokal, setiap node adalah server API Flask yang independen. Saya juga membuat aplikasi klien berbasis CLI untuk mempermudah menggunakan jaringan ini.
 
 *Source code* utama
-- `api.py`
+- `node.py`
 - `block.py`
 - `blockchain.py`
 
-
 Lainnya
 - `cli.py` - program CLI untuk mempermudah testing dan demo 
-- `testing.md` - panduan langkah-langkah untuk mengetes fitur pada *network*
 - `API.md` - dokumentasi API 
 
 ---
+
+## Cara Kerja 
+- Setiap node harus saling terdaftar dalam list tetangga agar dapat berkomunikasi
+- Setelah berhasil mining, node akan menyebarkan chain baru yang ia miliki ke semua tetangganya 
+- Ketika ada fork, akan ter-*resolve* otomatis ketika berhasil mining, atau bisa di-*resolve* manual
+- *Chain* yang kalah (yang lebih pendek) akan dibuang, namun transaksi di dalamnya akan dikembalikan ke *pool*
+
+**Struktur Blok**
+```json
+{
+    "hash": "0000409740fbea24bd7...",
+    "index": 1,
+    "merkle_root": "03f3789de44fa6b5d55...",
+    "nonce": 150898,
+    "previous_hash": "000029bf2719186c885...",
+    "timestamp": "2025-08-27 15:17:50",
+    "transactions": [
+      {
+        "amount": 10.5,
+        "recipient": "Bob",
+        "sender": "Alice"
+      }
+    ]
+  }
+```
 
 ## Cara Menggunakan
 
@@ -45,17 +68,17 @@ Buka beberapa jendela terminal untuk menjalankan node di port yang berbeda.
 
 **Terminal 1 (Node 1):**
 ```bash
-python api.py -p 5000
+python src/api.py -p 5000
 ```
 
 **Terminal 2 (Node 2):**
 ```bash
-python api.py -p 5001
+python src/api.py -p 5001
 ```
 
 **Terminal 3 (Node 3):**
 ```bash
-python api.py -p 5002
+python src/api.py -p 5002
 ```
 
 ### Menggunakan Client Admin
@@ -63,7 +86,7 @@ python api.py -p 5002
 Buka terminal baru untuk menjalankan aplikasi CLI.
 
 ```bash
-python cli.py
+python src/cli.py
 ```
 
 Anda akan disambut dengan menu interaktif. Berikut penjelasan masing-masing opsi:
@@ -83,4 +106,4 @@ Anda akan disambut dengan menu interaktif. Berikut penjelasan masing-masing opsi
 ```
 
 ### Melakukan Request Manual
-Jika ingin melakukan request manual menggunakan `curl` atau lainnya, sudah disediakan [dokumentasi API](./API.md")
+Jika ingin melakukan request manual menggunakan `curl` atau lainnya, sudah disediakan [dokumentasi API](./API.md)
