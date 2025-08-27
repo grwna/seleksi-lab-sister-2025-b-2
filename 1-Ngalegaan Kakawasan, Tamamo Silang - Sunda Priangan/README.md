@@ -10,11 +10,11 @@ HTTP Server yang ditulis menggunakan x86-64 Assembly,
 | Serves File           | Wajib | ✅ |
 | Routing/Path          | Wajib | ✅ |
 | Domain                | Wajib | ✅ |
-| Linking Binary                | Bonus | ❌ |
+| Linking Binary                | Bonus | ✅ |
 | Port Forwarding                | Bonus | ❌ |
 | Backend Framework                | Bonus | ❌ |
 | Deploy                | Bonus | ❌ |
-| Kreativitas                | Bonus | ❌ |
+| Kreativitas                | Bonus | ✅ |
 
 ## Daftar Isi
 - [Deskripsi](#deskripsi)
@@ -28,20 +28,6 @@ Proyek ini adalah sebuah web server sederhana yang ditulis dalam bahasa Assembly
 
 - `src` berisikan kode sumber server
 - `public` berisikan contoh-contoh file yang dapat dilayani server 
-
-Jenis file yang dapat dilayani:
-- HTML
-- CSS
-- Javascript
-- Json
-- PNG
-- JPG/JPEG
-- GIF
-- Textfile
-- MP4
-
-Jenis file dapat ditambahkan dengan menambah entri MIME pada file `mime.asm`
-- Common MIME Types: [Mozilla](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types)
 
  <br>
 
@@ -190,11 +176,11 @@ Jenis file yang dapat dilayani dijelaskan lebih lanjut pada bagian [kreativitas]
 - Melayani File <br>
 Untuk mencoba fitur pelayanan file, cukup buka halaman utama dari alamat server (defaultnya `localhost:8080`). Pada halaman tersebut ada beberapa *button* yang akan membawa ke route-route berbeda sesuai file, cukup tekan salah satu tombol untuk membuka file tersebut. (sebenarnya, berada di halaman utama sudah cukup untuk mencoba fitur ini, tapi *why not explore more?*)
 - Routing <br>
-Untuk routing, anda bisa mencoba menggunakan method PUT, POST dan DELETE. Lakukan salah satu perintah berikut pada route suatu file yang ada di `./public`
+Untuk routing, anda bisa mencoba menggunakan method PUT, POST dan DELETE. Lakukan salah satu perintah berikut pada route suatu file yang ada (untuk PUT dan DELETE) ataupun tidak ada (POST dan PUT) di `./public`
 ```bash
-    curl -i -X POST http://127.0.0.1:8080
-    curl -i -X PUT http://127.0.0.1:8080
-    curl -i -X DELETE http://127.0.0.1:8080
+    curl -i -X POST http://127.0.0.1:8080/<nama_file>
+    curl -i -X PUT http://127.0.0.1:8080/<nama_file>
+    curl -i -X DELETE http://127.0.0.1:8080/<nama_file>
 ```
 
 **Cuplikan Kode** <br>
@@ -239,6 +225,7 @@ Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup 
 ```
 **Screenshot Fitur** <br>
 `index.html`
+
 <img src="../img/ngasem_serve_file.png" width="900">
 
 
@@ -246,6 +233,19 @@ Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup 
 ### Kreativitas
 #### Melayani berbagai jenis file
 Implementasi ini terdapat pada file `mime.asm`. Server ini dapat melayani 
+Jenis file yang dapat dilayani:
+- HTML
+- CSS
+- Javascript
+- Json
+- PNG
+- JPG/JPEG
+- GIF
+- Textfile
+- MP4
+
+Jenis file dapat ditambahkan dengan menambah entri MIME pada file `mime.asm`
+- Common MIME Types: [Mozilla](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types)
 
 
 ## Referensi

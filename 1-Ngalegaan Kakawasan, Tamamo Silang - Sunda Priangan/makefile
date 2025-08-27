@@ -1,20 +1,17 @@
-# Makefile untuk server assembly
-
-# Assembler dan Linker
 NASM = nasm
 LD = ld
+CC=gcc
 
-# Opsi kompilasi
-# -f elf64: format output untuk Linux 64-bit
-# -g: menyertakan informasi debug (opsional)
 NASMFLAGS = -f elf64 -g
+CFLAGS=-O2 -fno-pie -g
+LDFLAGS= -no-pie -nostartfiles
 
 # Direktori sumber dan biner
 SRC = src
 BIN = bin
 
 # Nama file objek
-OBJS = $(addprefix $(BIN)/, server.o utils.o mime.o http_handler.o)
+OBJS = $(addprefix $(BIN)/, server.o utils.o mime.o http.o plugin.o plugin_helper.o)
 
 # Nama target executable
 TARGET = $(BIN)/http_server
@@ -27,15 +24,20 @@ all: $(TARGET)
 
 run: $(TARGET)
 	./$(TARGET)
-# Aturan untuk linking
-$(TARGET): $(OBJS)
-	$(LD) -o $@ $^
 
-# Aturan untuk assembling
-# Menggunakan pattern rule untuk menyederhanakan
-$(BIN)/%.o: $(SRC)/%.asm
+# Linking
+$(TARGET): $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $^
+
+# Assembling
+$(BIN)/%.o: $(SRC)/asm/%.asm
 	@mkdir -p $(BIN)
 	$(NASM) $(NASMFLAGS) -o $@ $<
+
+# Compiling
+$(BIN)/%.o: $(SRC)/other/%.c
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Aturan untuk membersihkan file hasil kompilasi
 clean:

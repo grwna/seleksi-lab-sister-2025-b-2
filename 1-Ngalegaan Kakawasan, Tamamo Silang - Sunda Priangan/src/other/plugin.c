@@ -29,18 +29,15 @@ void handle_plugin_request(int client_fd, char* method, char* path) {
         body_len = c_itoa(random_num, random_buffer);
         body_ptr = random_buffer;
     } else if (strncmp(path, "/plugin/hello", 13) == 0) {
-        printf("HAHAHAHAHA\n");
         const char* name = "Guest";
         char name_buffer[64];
         const char* query = strchr(path, '?');
         if (query) {
-            printf("HAHAHAHAHA\n");
             const char* name_val = get_query_param(query + 1, "name");
             if (name_val) {
                 const char* end = strchr(name_val, '&');
                 size_t len = end ? (size_t)(end - name_val) : strlen(name_val);
                 if (len < 63) { // Sisakan ruang untuk null terminator
-                    printf("HAHAHAHAHA\n");
                     strncpy(name_buffer, name_val, len);
                     name_buffer[len] = '\0';
                     name = name_buffer;
@@ -48,7 +45,6 @@ void handle_plugin_request(int client_fd, char* method, char* path) {
             }
         }
         
-        printf("HAHAHAHAHA\n");
         strcpy(hello_buffer, "Hello ");
         strcat(hello_buffer, name);
         strcat(hello_buffer, ", welcome to the server!");
