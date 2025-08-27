@@ -129,9 +129,8 @@ Atau bisa menggunakan web app dengan meng-*query* BAL berkali-kali dan melihat p
 
 
 >[!note]
->Pada web, yang ditampilkan adalah IDR, ini artinya  nilai RAI yang kecil akan tetap terlihat banyak. 
->Namun, Balance disimpan dalam mata uang RAI Stone, dan jika balance ini terlalu kecil, maka perhitungan bunga akan menghasilkan 0. <br>
->Jika pada web balance-nya tidak bertambah, lakukan saja deposit untuk menambah balance
+> Interest rate di-hardcode dengan 0.25% <br>
+>Jika nilai RAI cukup kecil, interest akan terhitung menjadi 0.
 
 
 <br>
