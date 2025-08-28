@@ -80,8 +80,8 @@ Data yang disimpan pada `input.txt` dan `accounts.txt` menggunakan mata uang Rai
 ### Deployment Kubernetes
 Deployment dilakukan pada Microsoft Azure menggunakan k3s. 
 Dapat diakses pada tautan berikut:
-- [20.255.211.191:8000](20.255.211.191:8000)
-- [grwna-app.eastasia.cloudapp.azure.com:8000](grwna-app.eastasia.cloudapp.azure.com:8000)
+- [20.255.211.191:8000](http://20.255.211.191:8000)
+- [grwna-app.eastasia.cloudapp.azure.com:8000](http://grwna-app.eastasia.cloudapp.azure.com:8000)
 
 Ada dua pod pada cluster, satu untuk aplikasi utama, dan satu lagi untuk Nginx. Untuk pod aplikasi utama, ada dua containter, satu untuk aplikasi web, dan satu lagi untuk menjalankan perhitungan bunga.
 
