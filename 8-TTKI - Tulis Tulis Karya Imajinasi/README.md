@@ -69,6 +69,6 @@ Sekarang Joko paham. Yang harus ia lakukan adalah meminta pertolongan S.I.S.T.E.
 <p align="center"><em>Sumber: Gambar dibuat menggunakan Google Imagen</em></p>
 
 ## Author's Notes
-idk man type sht
+idk man type sht 
 
 
