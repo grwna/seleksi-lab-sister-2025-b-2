@@ -1,6 +1,7 @@
 %include "src/asm/constants.inc"
 
 section .data
+    ; socket stuff
     server_address:
         .sin_family dw AF_INET
         .sin_port   dw ((PORT & 0xFF) << 8) | (PORT >> 8) ; Port dalam Big Endian (htons)
@@ -35,6 +36,8 @@ section .data
     method_post_str     db 'POST', 0
     method_put_str      db 'PUT', 0
     method_delete_str   db 'DELETE', 0
+
+    log_file db 'server.log', 0  ;
 
 section .bss
     server_fd resq 1
@@ -184,34 +187,76 @@ child_process:
     jmp client_disconnected
 
 print_logging:
+    ; --- Open the log file for appending ---
+    mov rax, SYS_OPEN
+    lea rdi, [log_file]
+    mov rsi, O_WRONLY | O_CREAT | O_APPEND
+    mov rdx, 0644o  ; File permissions (rw-r--r--)
+    syscall
+    ; rax now holds fd
+
+    test rax, rax
+    js .exit_no_close
+
+    mov rbx, rax ; Save the file descriptor
+
+    ; --- Log "Method: " ---
     mov rax, SYS_WRITE
-    mov rdi, STDOUT
     lea rsi, [msg_method]
     mov rdx, len_msg_method
+    mov rdi, STDOUT ; 1. Target stdout
     syscall
     mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, [method_]
-    mov rdx, [method_len]              ; Length of method 
+    mov rdi, rbx    ; 2. Target the log file
     syscall
 
+    ; --- Log the actual method ---
     mov rax, SYS_WRITE
+    mov rsi, [method_]
+    mov rdx, [method_len]
     mov rdi, STDOUT
+    syscall
+    mov rax, SYS_WRITE
+    mov rdi, rbx
+    syscall
+
+    ; --- Log " Path: " ---
+    mov rax, SYS_WRITE
     lea rsi, [msg_path]
     mov rdx, len_msg_path
+    mov rdi, STDOUT
     syscall
     mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, [path_]
-    mov rdx, [path_len]
+    mov rdi, rbx
     syscall
 
+    ; --- Log the actual path ---
     mov rax, SYS_WRITE
+    mov rsi, [path_]
+    mov rdx, [path_len]
     mov rdi, STDOUT
+    syscall
+    mov rax, SYS_WRITE
+    mov rdi, rbx
+    syscall
+
+    ; --- Log newline ---
+    mov rax, SYS_WRITE
     mov rsi, newline
     mov rdx, 1
+    mov rdi, STDOUT
     syscall
-    ret
+    mov rax, SYS_WRITE
+    mov rdi, rbx    
+    syscall
+
+    ; --- Close the file ---
+    mov rax, SYS_CLOSE
+    mov rdi, rbx
+    syscall
+
+    .exit_no_close:
+        ret
 
 
 handle_route:

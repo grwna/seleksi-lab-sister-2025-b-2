@@ -26,8 +26,40 @@ HTTP Server yang ditulis menggunakan x86-64 Assembly,
 ## Deskripsi
 Proyek ini adalah sebuah web server sederhana yang ditulis dalam bahasa Assembly x86-64. Server ini mampu menangani beberapa koneksi secara bersamaan menggunakan model forking untuk setiap koneksi dan dapat melayani berbagai jenis file statis serta mendukung metode HTTP dasar seperti GET, POST, PUT, dan DELETE.
 
-- `src` berisikan kode sumber server
-- `public` berisikan contoh-contoh file yang dapat dilayani server 
+### Struktur program
+```shell
+    .
+    ├── README.md
+    ├── bin
+    │   ├── http.o
+    │   ├── http_server
+    │   ├── mime.o
+    │   ├── plugin.o
+    │   ├── plugin_helper.o
+    │   ├── server.o
+    │   └── utils.o
+    ├── makefile
+    ├── public
+    │   ├── 404.html
+    │   ├── cat.gif
+    │   ├── data.json
+    │   ├── flag.html
+    │   ├── flag.md
+    │   ├── index.html
+    │   ├── julia.jpg
+    │   ├── jumpscare.mp3
+    │   ├── jumpscare.mp4
+    │   ├── mandel.png
+    │   ├── pdf.pdf
+    │   ├── plugin
+    │   ├── styles.css
+    │   └── text.txt
+    ├── server.log
+    └── src
+        ├── asm
+        └── other
+```
+
 
  <br>
 
@@ -227,13 +259,21 @@ Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup 
 `index.html`
 
 <img src="../img/ngasem_serve_file.png" width="900">
+<p align="center"><em>Menu utama (index.html) pada server, dilayani sebagai file html</em></p>
 
+<br>
+<br>
 
 ## Fitur Bonus
 ### Kreativitas
-#### Melayani berbagai jenis file
-Implementasi ini terdapat pada file `mime.asm`. Server ini dapat melayani 
-Jenis file yang dapat dilayani:
+#### Sistem Logging Sederhana
+Sistem logging pada server ini menampilkan method yang digunakan serta path/route yang diakses oleh client, setiap ada permintaan ke server. Logging akan ditampilkan pada stdout/terminal dan juga disimpan ke file `server.log`.
+
+
+<br>
+
+#### Melayani Berbagai Jenis File
+Implementasi ini terdapat pada file `mime.asm`. Server ini dapat melayani berbagai jenis file menggunakan tipe MIME dari file-file tersebut.
 - HTML
 - CSS
 - Javascript
@@ -244,8 +284,59 @@ Jenis file yang dapat dilayani:
 - Textfile
 - MP4
 
-Jenis file dapat ditambahkan dengan menambah entri MIME pada file `mime.asm`
+Jenis file dapat ditambahkan dengan menambah entri MIME pada file `mime.asm` sesuai yang ada pada sumber berikut:
 - Common MIME Types: [Mozilla](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types)
+
+**Cuplikan Kode** <br>
+Di bawah ini adalah kode yang menunjukkan definisi dari MIME type file yang didukung, logika dari fitur ini bisa dilihat pada file `src/asm/mime.asm`
+```nasm
+    section .data
+        ; --- Content Types ---
+        mime_html   db 'Content-Type: text/html; charset=utf-8', 13, 10
+        len_html    equ $ - mime_html
+
+        mime_css    db 'Content-Type: text/css', 13, 10
+        len_css     equ $ - mime_css
+
+        mime_js     db 'Content-Type: application/javascript', 13, 10
+        len_js      equ $ - mime_js
+
+        mime_json   db 'Content-Type: application/json', 13, 10
+        len_json    equ $ - mime_json
+
+        mime_png    db 'Content-Type: image/png', 13, 10
+        len_png     equ $ - mime_png
+
+        mime_jpg    db 'Content-Type: image/jpeg', 13, 10
+        len_jpg     equ $ - mime_jpg
+
+        mime_gif    db 'Content-Type: image/gif', 13, 10
+        len_gif     equ $ - mime_gif
+
+        mime_ico    db 'Content-Type: image/x-icon', 13, 10
+        len_ico     equ $ - mime_ico
+
+        mime_txt    db 'Content-Type: text/plain', 13, 10
+        len_txt     equ $ - mime_txt
+
+        mime_pdf    db 'Content-Type: application/pdf', 13, 10
+        len_pdf     equ $ - mime_pdf
+        mime_mp3    db 'Content-Type: audio/mp3', 13, 10
+        len_mp3     equ $ - mime_mp3
+
+        mime_mp4    db 'Content-Type: video/mp4', 13, 10
+        len_mp4     equ $ - mime_mp4
+
+        mime_md    db 'Content-Type: text/markdown', 13, 10
+        len_md      equ $ - mime_md
+        
+        mime_default db 'Content-Type: application/octet-stream', 13, 10
+        len_default equ $ - mime_default
+```
+**Screenshot Fitur** <br>
+
+<img src="../img/ngasem_memutar_video.png" width="900">
+<p align="center"><em>Server melayani file video .mp4</em></p>
 
 
 ## Referensi
