@@ -19,10 +19,15 @@ Cobol-cobolan
 | Domain     | Bonus | ❌ |
 
 
-## Direktori
-- `src` - menyimpan hasil pekerjaan (perbaikan kode)
-- `original` - menyimpan sumber kode soal original (sebelum perbaikan)
-- `manifest` - menyimpan file manifest untuk deployment kubernetes
+## Struktur
+```shell
+    .
+    ├── README.md
+    ├── deploy
+    ├── manifest - menyimpan file manifest untuk deployment kubernetes
+    ├── original - menyimpan sumber kode soal original (sebelum perbaikan)
+    └── src - menyimpan hasil pekerjaan (perbaikan kode)
+```
 
 <br>
 
@@ -144,4 +149,4 @@ Atau bisa menggunakan web app dengan meng-*query* BAL berkali-kali dan melihat p
 
 
 ### Reverse Proxy 
-Implementasi *reverse proxy* saya lakukan dengan membuat satu pod baru yang bertindak sebagai *proxy* server, yang akan meneruskan *traffic* eksternal ke *port* 8000 pada address webapp. Ketika user mengakses alamat deployment, permintaannya akan diteruskan ke *service* Nginx. Nginx kemudian meneruskannya ke Service yang menjalankan webapp pada alamat `http://cobol-service:8000`, di mana alamat tersebut akan disesuaikan dengan alamat runtime sebenarnya secara otomatis.
+Implementasi *reverse proxy* saya lakukan dengan membuat satu pod baru yang bertindak sebagai *proxy* server, yang akan meneruskan *traffic* eksternal ke *port* 8000 pada address webapp. Ketika user mengakses alamat deployment, permintaannya akan diteruskan ke *service* Nginx. Nginx kemudian meneruskannya ke Service yang menjalankan webapp pada alamat `http://cobol-service:8000`, di mana alamat tersebut akan disesuaikan dengan alamat runtime sebenarnya secara otomatis. Detail implementasi dapat dilihat pada direktori `/manifest`.
