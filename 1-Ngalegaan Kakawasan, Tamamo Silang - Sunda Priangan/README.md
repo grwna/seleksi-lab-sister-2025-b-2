@@ -245,10 +245,14 @@ Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup 
 ### Linking Program C
 Menggunakan static linking, kode Assembly dan C digabungkan menjadi satu executable. Kode C bertindak sebagai *plugin* bagi server. Plugin ini bekerja untuk route `/plugin/`, di mana jika user mengakses route ini, server akan meneruskan request tersebut ke program C untuk di olah.
 
+**Cara Menggunakan** <br>
 Route yang tersedia untuk plugin ini adalah:
 - `/plugin/` - menunjukkan *help page* plugin
 - `/plugin/random` - men-*generate* sebuah angka random (1-10000)
 - `/plugin/hello` - menampilkan pesan sapaan dengan parameter nama
+
+>[!note]
+> Pastikan route yang digunakan adalah `/plugin/` bukan `/plugin`
 
 **Cuplikan Kode** <br>
 Berikut adalah cuplikan kode Assembly yang memanggil binary yang di-*link*. Untuk melihat implementasi dari pluginnya sendiri dapat melihat kode sumber pada direktori `src/other`
