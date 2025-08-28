@@ -233,8 +233,9 @@ Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup 
 ```
 **Screenshot Fitur** <br>
 `index.html`
-
-<img src="../img/ngasem_serve_file.png" width="900" align="center">
+<p align="center">
+    <img src="../img/ngasem_serve_file.png" width="900" align="center">
+</p>
 <p align="center"><em>Menu utama (index.html) pada server, dilayani sebagai file html</em></p>
 
 <br>
@@ -290,12 +291,15 @@ Berikut adalah cuplikan kode Assembly yang memanggil binary yang di-*link*. Untu
 ```
 
 **Screenshot Fitur** <br>
-<img src="../img/ngasem_hello1.png" width="500" align="center">
+<p align="center">
+    <img src="../img/ngasem_hello1.png" width="500" align="center">
+</p>
 <p align="center"><em>/plugin/hello dengan parameter name=farrukh</em></p>
 
 <br>
-
-<img src="../img/ngasem_hello2.png" width="500" align="center">
+<p align="center">
+    <img src="../img/ngasem_hello2.png" width="500" align="center">
+</p>
 <p align="center"><em>/plugin/hello dengan parameter name=grwna</em></p>
 
 <br>
@@ -397,7 +401,9 @@ Sistem logging pada server ini menampilkan method yang digunakan serta path/rout
 ```
 
 **Screenshot Fitur** <br>
-<img src="../img/ngasem_logging.png" width="400" align="center">
+<p align="center">
+    <img src="../img/ngasem_logging.png" width="400" align="center">
+</p>
 <p align="center"><em>Output logging pada stdout</em></p>
 
 <br>
@@ -464,8 +470,9 @@ Di bawah ini adalah kode yang menunjukkan definisi dari MIME type file yang didu
         len_default equ $ - mime_default
 ```
 **Screenshot Fitur** <br>
-
-<img src="../img/ngasem_memutar_video.png" width="900" align="center">
+<p align="center">
+    <img src="../img/ngasem_memutar_video.png" width="900" align="center">
+</p>
 <p align="center"><em>Server melayani file video .mp4</em></p>
 
 
