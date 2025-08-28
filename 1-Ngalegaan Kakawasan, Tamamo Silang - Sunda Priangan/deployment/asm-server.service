@@ -1,0 +1,13 @@
+[Unit]
+Description=Assembly Web Server
+After=network.target
+
+[Service]
+User=grwna
+Group=grwna
+WorkingDirectory=/home/grwna/asm-server
+ExecStart=/home/grwna/asm-server/bin/http_server
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -14,3 +14,8 @@ Method: GET, Path: /mandel.png
 Method: GET, Path: /data.json
 Method: GET, Path: /hahahahaahahah
 Method: GET, Path: /styles.css
+Method: GET, Path: /
+Method: GET, Path: /styles.css
+Method: GET, Path: /plugin/
+Method: GET, Path: /plugin/hello?name=grwna
+Method: GET, Path: /plugin/hello?name=farrukh
