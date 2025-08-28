@@ -18,9 +18,8 @@ HTTP Server yang ditulis menggunakan x86-64 Assembly,
 
 ## Daftar Isi
 - [Deskripsi](#deskripsi)
-- [Fitur](#fitur)
-- [Bonus](#bonus)
-- [Refleksi](#refleksi)
+- [Fitur](#fitur-utamawajib)
+- [Bonus](#fitur-bonus)
 - [Referensi](#referensi)
 
 ## Deskripsi
@@ -30,34 +29,12 @@ Proyek ini adalah sebuah web server sederhana yang ditulis dalam bahasa Assembly
 ```shell
     .
     ├── README.md
-    ├── bin
-    │   ├── http.o
-    │   ├── http_server
-    │   ├── mime.o
-    │   ├── plugin.o
-    │   ├── plugin_helper.o
-    │   ├── server.o
-    │   └── utils.o
-    ├── makefile
-    ├── public
-    │   ├── 404.html
-    │   ├── cat.gif
-    │   ├── data.json
-    │   ├── flag.html
-    │   ├── flag.md
-    │   ├── index.html
-    │   ├── julia.jpg
-    │   ├── jumpscare.mp3
-    │   ├── jumpscare.mp4
-    │   ├── mandel.png
-    │   ├── pdf.pdf
-    │   ├── plugin
-    │   ├── styles.css
-    │   └── text.txt
-    ├── server.log
+    ├── makefile        --Skrip untuk menjalankan program
+    ├── public          --Berisi file-file yang dapat diakses pengguna
+    ├── server.log      --Output dari file logging
     └── src
-        ├── asm
-        └── other
+        ├── asm         --Berisi kode sumber server dalam assembly
+        └── other       --Berisi kode sumber selain assembly
 ```
 
 
@@ -258,7 +235,7 @@ Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup 
 **Screenshot Fitur** <br>
 `index.html`
 
-<img src="../img/ngasem_serve_file.png" width="900">
+<img src="../img/ngasem_serve_file.png" width="900" align="center">
 <p align="center"><em>Menu utama (index.html) pada server, dilayani sebagai file html</em></p>
 
 <br>
@@ -269,6 +246,48 @@ Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup 
 #### Sistem Logging Sederhana
 Sistem logging pada server ini menampilkan method yang digunakan serta path/route yang diakses oleh client, setiap ada permintaan ke server. Logging akan ditampilkan pada stdout/terminal dan juga disimpan ke file `server.log`.
 
+**Cuplikan Kode** <br>
+```nasm
+    print_logging:
+        ; --- Open the log file for appending ---
+        mov rax, SYS_OPEN
+        lea rdi, [log_file]
+        mov rsi, O_WRONLY | O_CREAT | O_APPEND
+        mov rdx, 0644o  ; File permissions (rw-r--r--)
+        syscall
+        ; rax now holds fd
+
+        test rax, rax
+        js .exit_no_close
+
+        mov rbx, rax ; Save the file descriptor
+
+        ; --- Log "Method: " ---
+        mov rax, SYS_WRITE
+        lea rsi, [msg_method]
+        mov rdx, len_msg_method
+        mov rdi, STDOUT ; 1. Target stdout
+        syscall
+        mov rax, SYS_WRITE
+        mov rdi, rbx    ; 2. Target the log file
+        syscall
+
+        ; --- Log the actual method ---
+        mov rax, SYS_WRITE
+        mov rsi, [method_]
+        mov rdx, [method_len]
+        mov rdi, STDOUT
+        syscall
+        mov rax, SYS_WRITE
+        mov rdi, rbx
+        syscall
+
+    ...the rest of the code
+```
+
+**Screenshot Fitur** <br>
+<img src="../img/ngasem_logging.png" width="400" align="center">
+<p align="center"><em>Output logging pada stdout</em></p>
 
 <br>
 
@@ -335,7 +354,7 @@ Di bawah ini adalah kode yang menunjukkan definisi dari MIME type file yang didu
 ```
 **Screenshot Fitur** <br>
 
-<img src="../img/ngasem_memutar_video.png" width="900">
+<img src="../img/ngasem_memutar_video.png" width="900" align="center">
 <p align="center"><em>Server melayani file video .mp4</em></p>
 
 
