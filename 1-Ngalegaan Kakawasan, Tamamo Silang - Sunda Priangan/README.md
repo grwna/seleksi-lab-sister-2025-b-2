@@ -184,7 +184,7 @@ Jenis file yang dapat dilayani dijelaskan lebih lanjut pada bagian [kreativitas]
 - Melayani File <br>
 Untuk mencoba fitur pelayanan file, cukup buka halaman utama dari alamat server (defaultnya `localhost:8080`). Pada halaman tersebut ada beberapa *button* yang akan membawa ke route-route berbeda sesuai file, cukup tekan salah satu tombol untuk membuka file tersebut. (sebenarnya, berada di halaman utama sudah cukup untuk mencoba fitur ini, tapi *why not explore more?*)
 - Routing <br>
-Untuk routing, anda bisa mencoba menggunakan method PUT, POST dan DELETE. Lakukan salah satu perintah berikut pada route suatu file yang ada (untuk PUT dan DELETE) ataupun tidak ada (POST dan PUT) di `./public`
+Untuk routing, anda bisa mencoba menggunakan method PUT, POST dan DELETE. Lakukan salah satu perintah berikut pada route suatu file yang ada (untuk PUT dan DELETE) ataupun tidak ada (POST dan PUT) di `./public`. Anda bisa konfirmasi pembuatan/perubahan file dengan membuka route ke file tersebut.
 ```bash
     curl -i -X POST http://127.0.0.1:8080/<nama_file>
     curl -i -X PUT http://127.0.0.1:8080/<nama_file>
