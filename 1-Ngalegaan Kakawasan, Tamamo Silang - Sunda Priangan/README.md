@@ -13,7 +13,7 @@ HTTP Server yang ditulis menggunakan x86-64 Assembly,
 | Linking Binary                | Bonus | ✅ |
 | Port Forwarding                | Bonus | ❌ |
 | Backend Framework                | Bonus | ❌ |
-| Deploy                | Bonus | ❌ |
+| Deploy                | Bonus | ✅ |
 | Kreativitas                | Bonus | ✅ |
 
 ## Daftar Isi
@@ -47,7 +47,6 @@ Proyek ini adalah sebuah web server sederhana yang ditulis dalam bahasa Assembly
 - NASM
 - ld
 - GNU Make
-
 
 
 ## Fitur Utama/Wajib
@@ -242,8 +241,120 @@ Dibawah adalah kode untuk *handling* method GET. Kode inti dari fitur ini cukup 
 <br>
 
 ## Fitur Bonus
-### Kreativitas
-#### Sistem Logging Sederhana
+### Linking Program C
+Menggunakan static linking, kode Assembly dan C digabungkan menjadi satu executable. Kode C bertindak sebagai *plugin* bagi server. Plugin ini bekerja untuk route `/plugin/`, di mana jika user mengakses route ini, server akan meneruskan request tersebut ke program C untuk di olah.
+
+Route yang tersedia untuk plugin ini adalah:
+- `/plugin/` - menunjukkan *help page* plugin
+- `/plugin/random` - men-*generate* sebuah angka random (1-10000)
+- `/plugin/hello` - menampilkan pesan sapaan dengan parameter nama
+
+**Cuplikan Kode** <br>
+Berikut adalah cuplikan kode Assembly yang memanggil binary yang di-*link*. Untuk melihat implementasi dari pluginnya sendiri dapat melihat kode sumber pada direktori `src/other`
+```nasm
+    section .data
+        plugin_path db '/plugin/', 0
+
+    handle_get:
+        push rdi
+        push rsi
+        push rcx
+        push rbp
+
+        ; handle plugin
+        mov rdi, [path_]
+        mov rsi, plugin_path
+        mov rcx, 8
+
+        cld
+        repe cmpsb
+        je .call_plugin
+
+        pop rbp
+        pop rcx
+        pop rsi
+        pop rdi
+    
+    .call_plugin:
+        mov rdi, [client_fd]
+        mov rsi, [method_]
+        mov rdx, [path_]
+        call handle_plugin_request
+
+        pop rbp
+        pop rcx
+        pop rsi
+        pop rdi
+
+        jmp client_disconnected
+```
+
+**Screenshot Fitur** <br>
+<img src="../img/ngasem_hello1.png" width="500" align="center">
+<p align="center"><em>/plugin/hello dengan parameter name=farrukh</em></p>
+
+<br>
+
+<img src="../img/ngasem_hello2.png" width="500" align="center">
+<p align="center"><em>/plugin/hello dengan parameter name=grwna</em></p>
+
+<br>
+
+### Deploy
+Deployment dapat dibuka pada tautan berikut: [https://grwnasm.eastasia.cloudapp.azure.com](https://grwnasm.eastasia.cloudapp.azure.com)
+
+Deployment dilakukan dengan Microsoft Azure sebagai VPS. Sertifikasi HTTPS didapatkan dan dikelola menggunakan Certbot dari CA Let's Encrypt.
+Konfigurasi yang saya gunakan ditampilkan pada Cuplikan Kode
+
+**Cuplikan Kode** <br>
+```
+    # asm-server.service
+    [Unit]
+    Description=Assembly Web Server
+    After=network.target
+
+    [Service]
+    User=grwna
+    Group=grwna
+    WorkingDirectory=/home/grwna/asm-server             --- Directory proyek di VM
+    ExecStart=/home/grwna/asm-server/bin/http_server
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+```
+```
+    # asm-nginx.conf
+    server {
+        listen 80;
+        server_name grwnasm.eastasia.cloudapp.azure.com;
+
+        location / {
+            proxy_pass http://127.0.0.1:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+```
+
+Skrip otomasi deployment
+```
+    # deploy.sh
+    sudo cp ~/asm-server/deployment/asm-server.service /etc/systemd/system/asm-server.service
+    sudo cp ~/asm-server/deployment/asm-nginx.conf /etc/nginx/sites-available/asm-nginx.conf
+    sudo systemctl enable asm-server.service
+    sudo systemctl start asm-server.service
+    sudo systemctl status asm-server.service
+    sudo ln -s /etc/nginx/sites-available/asm-nginx.conf /etc/nginx/sites-enabled/
+    sudo nginx -t
+    sudo systemctl restart nginx
+    sudo systemctl status nginx
+    sudo certbot --nginx
+```
+
+<br>
+
+### [Kreativitas] Sistem Logging Sederhana
 Sistem logging pada server ini menampilkan method yang digunakan serta path/route yang diakses oleh client, setiap ada permintaan ke server. Logging akan ditampilkan pada stdout/terminal dan juga disimpan ke file `server.log`.
 
 **Cuplikan Kode** <br>
@@ -291,7 +402,7 @@ Sistem logging pada server ini menampilkan method yang digunakan serta path/rout
 
 <br>
 
-#### Melayani Berbagai Jenis File
+### [Kreativitas]  Melayani Berbagai Jenis File
 Implementasi ini terdapat pada file `mime.asm`. Server ini dapat melayani berbagai jenis file menggunakan tipe MIME dari file-file tersebut.
 - HTML
 - CSS
